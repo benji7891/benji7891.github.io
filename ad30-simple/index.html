@@ -6,9 +6,14 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0e1116">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Thirtieth Year">
+<meta name="application-name" content="Thirtieth Year">
 <title>The Thirtieth Year</title>
-<link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <style>
   :root{
     --bg:#0e1116; --panel:#171b22; --line:#2a303a; --text:#ece8df; --muted:#9a9fa8;
@@ -50,6 +55,13 @@
   .mk.has-video .dot{border-color:var(--gold)}
   .mk.has-video .dot i{width:0; height:0; border-radius:0; background:none; opacity:1;
        border-left:11px solid var(--gold); border-top:7px solid transparent; border-bottom:7px solid transparent; margin-left:3px}
+  /* progress marks: visited = small quiet tick, watched = gold disc with check */
+  .dot b{display:none; position:absolute; right:-3px; bottom:-3px; width:18px; height:18px; border-radius:50%;
+       background:var(--bg); border:1px solid var(--line); color:var(--muted); font:700 11px/16px system-ui,sans-serif; text-align:center}
+  .mk.visited .dot b{display:block}
+  .mk.watched .dot{background:var(--gold); border-color:var(--gold)}
+  .mk.watched .dot i{display:none}
+  .mk.watched .dot b{display:block; position:static; width:auto; height:auto; border:0; background:none; color:#1a1507; font-size:20px; line-height:1}
   .mk .t{display:block; font-size:22px; line-height:1.25}
   .mk .d{display:block; font-size:15px; color:var(--muted); margin-top:4px}
   .src{text-align:center; color:var(--muted); font-size:13px; margin:28px 0 0; opacity:.8}
@@ -57,6 +69,10 @@
   footer{margin:72px 0 0; padding-top:28px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:15px}
   footer p{margin:0}
   footer cite{display:block; font-style:normal; font-size:13px; margin-top:8px; opacity:.8}
+  .linkbtn{background:none; border:0; color:var(--muted); font:inherit; font-size:13px; min-height:44px; padding:0 14px;
+       margin-top:18px; opacity:.7; text-decoration:underline; text-underline-offset:3px; cursor:pointer}
+  .linkbtn[hidden]{display:none}
+  .linkbtn:focus-visible,.icon:focus-visible,.nx button:focus-visible,.bigplay:focus-visible,.tip button:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
 
   /* sheet */
   .scrim{position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:opacity .25s ease}
@@ -72,12 +88,36 @@
   .sheet-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
   .sheet h2{font-weight:500; font-size:28px; line-height:1.2; margin:10px 0 0}
   .sheet .d{color:var(--muted); font-size:15px; margin:6px 0 0}
+  .acts{display:flex; gap:10px; flex:0 0 auto}
+  .icon{width:44px; height:44px; border-radius:50%; border:0; background:#232833; color:var(--text); display:grid; place-items:center; cursor:pointer; padding:0}
+  .icon svg{width:20px; height:20px}
   .x{flex:0 0 44px; width:44px; height:44px; border-radius:50%; border:0; background:#232833; color:var(--text);
      font-size:22px; line-height:1; cursor:pointer}
   .x:focus-visible,.read:focus-visible,video:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
   .media{margin:24px 0 0}
   .media video{width:100%; border-radius:14px; background:#000; display:block; aspect-ratio:16/9}
   .media .vt{color:var(--muted); font-size:14px; margin-top:8px}
+  .media .vbox{position:relative}
+  .bigplay{position:absolute; left:50%; top:50%; width:72px; height:72px; margin:-36px 0 0 -36px; border-radius:50%;
+       border:0; background:rgba(14,17,22,.75); color:var(--gold); font-size:28px; cursor:pointer; padding:0 0 0 5px}
+  .bigplay[hidden]{display:none}
+  .nx{margin:18px 0 0; padding:14px; border:1px solid var(--line); border-radius:16px; background:#1d222b;
+       display:flex; align-items:center; gap:10px}
+  .nx[hidden]{display:none}
+  .nx .go{flex:1; min-height:52px; border-radius:12px; border:1px solid var(--gold); background:var(--gold-soft);
+       color:var(--text); font:inherit; font-size:17px; text-align:left; padding:6px 14px; cursor:pointer}
+  .nx .go small{display:block; color:var(--muted); font-size:13px}
+  .nx .cancel{min-height:52px; min-width:44px; border:0; background:none; color:var(--muted); font:inherit; font-size:15px; padding:0 8px; cursor:pointer}
+  .toast{position:fixed; z-index:20; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+       background:#2a303a; color:var(--text); padding:10px 18px; border-radius:22px; font-size:15px;
+       opacity:0; pointer-events:none; transition:opacity .2s ease; white-space:nowrap}
+  .toast.show{opacity:1}
+  .tip{position:fixed; z-index:5; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); max-width:520px; margin:0 auto;
+       background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:8px 8px 8px 18px;
+       display:flex; align-items:center; gap:8px; font-size:15px; color:var(--text)}
+  .tip[hidden]{display:none}
+  .tip p{margin:0; flex:1}
+  .tip button{flex:0 0 44px; height:44px; border:0; background:none; color:var(--muted); font-size:18px; cursor:pointer}
   .soon{color:var(--muted); font-style:italic; font-size:16px; margin:24px 0 0}
   blockquote{margin:28px 0 0; padding:0; font-size:23px; line-height:1.5}
   blockquote cite{display:block; margin-top:12px; font-size:15px; font-style:normal; color:var(--gold); letter-spacing:.03em}
@@ -115,6 +155,7 @@
   <footer>
     <p class="serif" id="footVerse"></p>
     <cite id="footRef"></cite>
+    <button class="linkbtn" id="resetBtn" type="button" hidden>Reset watched marks</button>
   </footer>
 </div>
 
@@ -126,11 +167,26 @@
       <h2 class="serif" id="shTitle"></h2>
       <p class="d" id="shDate"></p>
     </div>
-    <button class="x" id="shClose" type="button" aria-label="Close">✕</button>
+    <div class="acts">
+      <button class="icon" id="shShare" type="button" aria-label="Share this">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+      </button>
+      <button class="x" id="shClose" type="button" aria-label="Close">✕</button>
+    </div>
   </div>
   <div id="shMedia"></div>
+  <div class="nx" id="shNext" hidden>
+    <button class="go" id="shNextGo" type="button"><small id="shNextIn">Up next</small><span id="shNextT"></span></button>
+    <button class="cancel" id="shNextCancel" type="button">Cancel</button>
+  </div>
   <blockquote class="serif"><span id="shVerse"></span><cite id="shRef"></cite></blockquote>
   <button class="read" id="shRead" type="button" aria-pressed="false">🔊 Read it to me</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" hidden>
+  <p>Tip: tap Share <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>, then “Add to Home Screen”.</p>
+  <button type="button" id="tipX" aria-label="Dismiss tip">✕</button>
 </div>
 
 <script>
@@ -194,26 +250,60 @@ var FOOTER = { verse:"But of that day and hour knoweth no man, no, not the angel
   tick(); setInterval(tick, 15000);
   window.__cd = { target: target, tick: tick };
 
+  /* ---------- progress (localStorage) ---------- */
+  var KEY = "ad30.progress";
+  var prog = {};
+  try { prog = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ prog = {}; }
+  function saveProg(){ try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch(e){} }
+  function mark(id, level){           // level: "visited" < "watched"
+    if (prog[id] === "watched" || prog[id] === level) return;
+    prog[id] = level; saveProg(); paintMarks();
+  }
+
   /* ---------- markers ---------- */
-  var path = $("path");
+  var path = $("path"), btns = [];
   MARKERS.forEach(function(mk, i){
     var li = document.createElement("li");
     var b = document.createElement("button");
     b.type = "button"; b.className = "mk" + (mk.video ? " has-video" : "");
     b.setAttribute("aria-haspopup", "dialog");
-    b.innerHTML = '<span class="dot" aria-hidden="true"><i></i></span><span><span class="t serif"></span><span class="d"></span></span>';
+    b.innerHTML = '<span class="dot" aria-hidden="true"><i></i><b>✓</b></span><span><span class="t serif"></span><span class="d"></span></span>';
     b.querySelector(".t").textContent = mk.title;
     b.querySelector(".d").textContent = mk.date;
-    b.setAttribute("aria-label", mk.title + ", " + mk.date + (mk.video ? ", has video" : ""));
-    b.addEventListener("click", function(){ openSheet(i, b); });
-    li.appendChild(b); path.appendChild(li);
+    b.addEventListener("click", function(){ openSheet(i); });
+    li.appendChild(b); path.appendChild(li); btns.push(b);
+  });
+  var resetBtn = $("resetBtn");
+  function paintMarks(){
+    var any = false;
+    MARKERS.forEach(function(mk, i){
+      var st = prog[mk.id], b = btns[i];
+      b.classList.toggle("watched", st === "watched");
+      b.classList.toggle("visited", st === "visited");
+      if (st) any = true;
+      b.setAttribute("aria-label", mk.title + ", " + mk.date + (mk.video ? ", has video" : "") +
+        (st === "watched" ? (mk.video ? ", watched" : ", finished") : st === "visited" ? ", opened" : ""));
+    });
+    resetBtn.hidden = !any;
+  }
+  paintMarks();
+  resetBtn.addEventListener("click", function(){
+    prog = {}; saveProg(); paintMarks(); toast("Marks cleared");
+    try { btns[0].focus({ preventScroll: true }); } catch(e){}
   });
   $("footVerse").textContent = "“" + FOOTER.verse + "”";
   $("footRef").textContent = FOOTER.ref + " (KJV)";
 
+  /* ---------- toast ---------- */
+  var toastEl = $("toast"), toastT = null;
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+  }
+
   /* ---------- speech ---------- */
   var synth = window.speechSynthesis || null;
-  var readBtn = $("shRead"), speaking = false, current = null;
+  var readBtn = $("shRead"), speaking = false, current = null, curIndex = -1, speakToken = 0;
   if (!synth || typeof SpeechSynthesisUtterance === "undefined") readBtn.hidden = true;
   function pickVoice(){
     if (!synth) return null;
@@ -229,7 +319,7 @@ var FOOTER = { verse:"But of that day and hour knoweth no man, no, not the angel
     readBtn.setAttribute("aria-pressed", on ? "true" : "false");
     readBtn.textContent = on ? "■ Stop reading" : "🔊 Read it to me";
   }
-  function stopSpeech(){ if (synth) synth.cancel(); setReading(false); }
+  function stopSpeech(){ speakToken++; if (synth) synth.cancel(); setReading(false); }
   readBtn.addEventListener("click", function(){
     if (!synth || !current) return;
     if (speaking || synth.speaking) { stopSpeech(); return; }
@@ -239,50 +329,127 @@ var FOOTER = { verse:"But of that day and hour knoweth no man, no, not the angel
     var u = new SpeechSynthesisUtterance(current.verse + " … " + refSpoken + ".");
     var v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "en-US"; }
     u.rate = 0.9; u.pitch = 1;
-    u.onend = u.onerror = function(){ setReading(false); };
+    var token = ++speakToken, id = current.id, hasVid = !!current.video;
+    u.onend = function(){ if (token === speakToken) { setReading(false); if (!hasVid) mark(id, "watched"); } };
+    u.onerror = function(){ if (token === speakToken) setReading(false); };
     setReading(true);
     synth.speak(u);
     if (synth.paused) synth.resume();
   });
+  window.__readDone = function(){ if (current && !current.video) mark(current.id, "watched"); }; // test hook
+
+  /* ---------- share ---------- */
+  function baseUrl(){ return location.href.split("#")[0]; }
+  function copyText(t){
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+    return new Promise(function(res, rej){
+      var ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0"; sheet.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch(e){}
+      sheet.removeChild(ta); ok ? res() : rej();
+    });
+  }
+  $("shShare").addEventListener("click", function(){
+    if (!current) return;
+    var url = baseUrl() + "#" + current.id;
+    var data = { title: "The Thirtieth Year · " + current.title, text: current.title + " — " + current.date, url: url };
+    function fallback(){
+      copyText(url).then(function(){ toast("Link copied"); }, function(){ toast(url); });
+    }
+    if (navigator.share) {
+      navigator.share(data).catch(function(err){ if (!err || err.name !== "AbortError") fallback(); });
+    } else fallback();
+  });
 
   /* ---------- sheet ---------- */
-  var sheet = $("sheet"), scrim = $("scrim"), page = $("page"), opener = null;
-  function openSheet(i, btn){
-    current = MARKERS[i]; opener = btn;
+  var sheet = $("sheet"), scrim = $("scrim"), page = $("page");
+  var nx = $("shNext"), nxT = null, nxLeft = 0, NEXT_SECS = 5;
+  function cancelNext(){ clearInterval(nxT); nxT = null; nx.hidden = true; }
+  function showNext(){
+    var ni = curIndex + 1;
+    if (ni >= MARKERS.length) return;
+    $("shNextT").textContent = "Next: " + MARKERS[ni].title;
+    nxLeft = NEXT_SECS;
+    var inEl = $("shNextIn");
+    function lbl(){ inEl.textContent = "Opens in " + nxLeft + "s"; }
+    lbl(); nx.hidden = false;
+    nx.scrollIntoView && nx.scrollIntoView({ block: "nearest" });
+    clearInterval(nxT);
+    nxT = setInterval(function(){
+      nxLeft--; if (nxLeft <= 0) { cancelNext(); openSheet(ni, true); } else lbl();
+    }, 1000);
+    try { $("shNextGo").focus({ preventScroll: true }); } catch(e){}
+  }
+  $("shNextGo").addEventListener("click", function(){ var ni = curIndex + 1; cancelNext(); openSheet(ni, true); });
+  $("shNextCancel").addEventListener("click", function(){ cancelNext(); $("shClose").focus(); });
+
+  function buildVideo(){
+    var wrap = document.createElement("div"); wrap.className = "media";
+    var box = document.createElement("div"); box.className = "vbox";
+    var vid = document.createElement("video");
+    vid.controls = true; vid.setAttribute("playsinline", ""); vid.setAttribute("preload", "none");
+    vid.poster = current.video.poster; vid.src = current.video.src;
+    vid.setAttribute("title", current.video.title);
+    var big = document.createElement("button"); big.type = "button"; big.className = "bigplay"; big.hidden = true;
+    big.setAttribute("aria-label", "Play video"); big.textContent = "▶";
+    big.addEventListener("click", function(){ big.hidden = true; var p = vid.play(); if (p && p.catch) p.catch(function(){ big.hidden = false; }); });
+    var id = current.id;
+    vid.addEventListener("play", function(){ big.hidden = true; cancelNext(); });
+    vid.addEventListener("timeupdate", function(){ if (vid.duration && vid.currentTime / vid.duration >= 0.9) mark(id, "watched"); });
+    vid.addEventListener("ended", function(){
+      mark(id, "watched");
+      try { if (vid.webkitDisplayingFullscreen) vid.webkitExitFullscreen(); if (document.fullscreenElement) document.exitFullscreen(); } catch(e){}
+      showNext();
+    });
+    box.appendChild(vid); box.appendChild(big);
+    var cap = document.createElement("div"); cap.className = "vt"; cap.textContent = "Professor Zac · " + current.video.title;
+    wrap.appendChild(box); wrap.appendChild(cap);
+    return { el: wrap, vid: vid, big: big };
+  }
+
+  // auto = arrived via "Next" (try to play; if the browser refuses, show a big play button)
+  function openSheet(i, auto){
+    if (i < 0 || i >= MARKERS.length) return;
+    var old = sheet.querySelector("video"); if (old) { try { old.pause(); } catch(e){} }
+    cancelNext();
+    current = MARKERS[i]; curIndex = i;
     stopSpeech();
     $("shTitle").textContent = current.title;
     $("shDate").textContent = current.date + " · " + (current.source || "Professor Zac’s guide");
     $("shVerse").textContent = "“" + current.verse + "”";
     $("shRef").textContent = current.ref + " (KJV)";
     var media = $("shMedia"); media.innerHTML = "";
-    if (current.video) {
-      var wrap = document.createElement("div"); wrap.className = "media";
-      var vid = document.createElement("video");
-      vid.controls = true; vid.setAttribute("playsinline", ""); vid.setAttribute("preload", "none");
-      vid.poster = current.video.poster; vid.src = current.video.src;
-      vid.setAttribute("title", current.video.title);
-      var cap = document.createElement("div"); cap.className = "vt"; cap.textContent = "Professor Zac · " + current.video.title;
-      wrap.appendChild(vid); wrap.appendChild(cap); media.appendChild(wrap);
-    } else {
+    var v = null;
+    if (current.video) { v = buildVideo(); media.appendChild(v.el); }
+    else {
       var p = document.createElement("p"); p.className = "soon"; p.textContent = "Video coming soon.";
       media.appendChild(p);
     }
+    mark(current.id, "visited");
     sheet.classList.add("open"); scrim.classList.add("open");
     sheet.setAttribute("aria-hidden", "false");
     page.setAttribute("aria-hidden", "true"); if ("inert" in page) page.inert = true;
     document.body.style.overflow = "hidden";
     sheet.scrollTop = 0;
+    try { history.replaceState(null, "", "#" + current.id); } catch(e){}
+    if (auto && v) {
+      try {
+        var pr = v.vid.play();
+        if (pr && pr.catch) pr.catch(function(){ v.big.hidden = false; });
+      } catch(e){ v.big.hidden = false; }
+    }
     setTimeout(function(){ $("shClose").focus(); }, 30);
   }
   function closeSheet(){
     if (!sheet.classList.contains("open")) return;
-    stopSpeech();
+    stopSpeech(); cancelNext();
     var v = sheet.querySelector("video"); if (v) { try { v.pause(); } catch(e){} }
     sheet.classList.remove("open"); scrim.classList.remove("open");
     sheet.setAttribute("aria-hidden", "true");
     page.removeAttribute("aria-hidden"); if ("inert" in page) page.inert = false;
     document.body.style.overflow = "";
-    if (opener) opener.focus();
+    try { history.replaceState(null, "", baseUrl()); } catch(e){}
+    if (btns[curIndex]) btns[curIndex].focus();
   }
   $("shClose").addEventListener("click", closeSheet);
   scrim.addEventListener("click", closeSheet);
@@ -298,11 +465,38 @@ var FOOTER = { verse:"But of that day and hour knoweth no man, no, not the angel
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       else if (!sheet.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
     }
-  });
+  }, true);   // capture phase: still works when focus is inside the video's own controls
   // Swipe down on the grab area to close
   var y0 = null;
   sheet.addEventListener("touchstart", function(e){ y0 = sheet.scrollTop <= 0 ? e.touches[0].clientY : null; }, {passive:true});
   sheet.addEventListener("touchend", function(e){ if (y0 !== null && e.changedTouches[0].clientY - y0 > 90) closeSheet(); y0 = null; }, {passive:true});
+
+  /* ---------- deep link: page.html#marker-id ---------- */
+  function fromHash(){
+    var id = decodeURIComponent((location.hash || "").slice(1));
+    for (var k = 0; k < MARKERS.length; k++) if (MARKERS[k].id === id) { openSheet(k); return true; }
+    return false;
+  }
+  window.addEventListener("hashchange", fromHash);
+  var deep = fromHash();
+
+  /* ---------- one-time "Add to Home Screen" tip (iPhone/iPad Safari only) ---------- */
+  (function(){
+    var ua = navigator.userAgent || "";
+    var ios = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram/.test(ua);
+    var standalone = navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+    var seen = false; try { seen = localStorage.getItem("ad30.tip") === "1"; } catch(e){}
+    if (!ios || !safari || standalone || seen) return;
+    var tip = $("tip");
+    setTimeout(function(){
+      tip.hidden = false;
+      try { localStorage.setItem("ad30.tip", "1"); } catch(e){}   // shown once, ever
+      setTimeout(function(){ tip.hidden = true; }, 15000);
+    }, deep ? 8000 : 2500);
+    $("tipX").addEventListener("click", function(){ tip.hidden = true; });
+  })();
+
   window.__openSheet = openSheet; window.__closeSheet = closeSheet;
 })();
 </script>
