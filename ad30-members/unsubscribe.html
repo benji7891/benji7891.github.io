@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0e1116">
+<title>Unsubscribe · The Thirtieth Year</title>
+<link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
+<link rel="stylesheet" href="css/members.css">
+</head>
+<body>
+<main class="gate">
+  <h1 class="serif">New-video emails</h1>
+  <p class="lead" id="lead">Stop getting an email each time a new video is added?</p>
+  <button class="btn" id="go" type="button">Unsubscribe</button>
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  <p class="privacy">You can still visit the site any time. Changed your mind? Sign in and switch “Email me when a new video is added” back on at the bottom of the page. To be removed from the study group completely, ask Sam.</p>
+  <p><a href="./">Go to the site →</a></p>
+</main>
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script src="js/common.js"></script>
+<script>
+(function () {
+  "use strict";
+  // A tap is required (not automatic on page load) so email link-scanners can't unsubscribe people by accident.
+  var AD30 = window.AD30, $ = AD30.$, token = AD30.qs.t || "", msg = $("msg"), go = $("go");
+  function say(t, kind) { msg.textContent = t; msg.className = "msg" + (kind ? " " + kind : ""); }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
+    go.disabled = true; say("This unsubscribe link is incomplete. Please use the link from the email, or sign in and use the switch at the bottom of the site.", "err"); return;
+  }
+  if (!AD30.sb) { go.disabled = true; say(AD30.configured ? AD30.loadError : "This copy of the site isn’t connected yet (see SETUP.md).", "err"); return; }
+  go.addEventListener("click", function () {
+    go.disabled = true; go.textContent = "Working…";
+    AD30.sb.rpc("unsubscribe", { p_token: token }).then(function (r) {
+      if (r.error) { go.disabled = false; go.textContent = "Unsubscribe"; say(AD30.friendlyError(r.error), "err"); return; }
+      if (r.data === true) { go.hidden = true; $("lead").textContent = "Done."; say("You won’t get new-video emails any more.", "ok"); }
+      else { go.disabled = false; go.textContent = "Unsubscribe"; say("We couldn’t find that link. It may be old — sign in and use the switch at the bottom of the site instead.", "err"); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

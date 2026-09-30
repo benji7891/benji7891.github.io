@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0e1116">
+<title>Group leader view · The Thirtieth Year</title>
+<link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
+<link rel="stylesheet" href="css/members.css">
+</head>
+<body class="admin">
+
+<main class="gate" id="gate">
+  <h1 class="serif">Group leader view</h1>
+  <p class="lead">Sign in with your admin email.</p>
+  <form id="gForm" novalidate>
+    <label for="gEmail">Your email</label>
+    <input class="field" id="gEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+    <button class="btn" id="gSend" type="submit">Email me a sign-in link</button>
+  </form>
+  <form id="gCodeForm" novalidate hidden>
+    <p class="msg ok" style="margin-top:0">We emailed <b id="gSentTo"></b>. Tap the link, or type the code:</p>
+    <label for="gCode">Code from the email</label>
+    <input class="field code" id="gCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10">
+    <button class="btn" id="gVerify" type="submit">Sign in</button>
+    <button class="linkbtn" id="gResend" type="button">Send another email</button>
+    <button class="linkbtn" id="gBack" type="button">Use a different email</button>
+  </form>
+  <p class="msg" id="gMsg" role="status" aria-live="polite"></p>
+  <p class="privacy">Privacy: we record your email, which pages and videos you view and when, and any referral link you came from — used only for this study group. Unsubscribe anytime.</p>
+  <div class="setup-note" id="gSetup" hidden><b>Not connected yet</b> — see SETUP.md. <a href="?demo=1">Preview with sample data →</a></div>
+</main>
+
+<div class="wrap" id="page" hidden>
+  <div class="topbar">
+    <h1 class="serif" style="font-size:32px">Group leader view</h1>
+    <p class="small" style="color:var(--muted);margin:0"><span id="whoami"></span> · <a href="./">Site</a> · <button class="linkbtn" id="signOut" type="button" style="margin:0;padding:0 6px">Sign out</button></p>
+  </div>
+  <p class="msg err" id="notAdmin" hidden>You’re signed in, but this email isn’t on the admin list.</p>
+
+  <div id="adminBody" hidden>
+    <p class="hint" id="updated"></p>
+    <div class="cards" id="stats"></div>
+
+    <h2 class="serif">Testers</h2>
+    <p class="hint">Everyone invited or signed in, most recent visit first. A “visit” is a page load at least 30 minutes after the last one. “How far” = average of the furthest point reached in each video they started. Times are in your device’s time zone.</p>
+    <p class="hint"><button class="xbtn" data-csv="people" type="button">Download CSV</button></p>
+    <div class="tbl" id="tPeople"></div>
+
+    <h2 class="serif">Videos</h2>
+    <p class="hint">Viewers = people who pressed play. Finished = watched 90% or more. Completion rate = finished ÷ viewers.</p>
+    <p class="hint"><button class="xbtn" data-csv="videos" type="button">Download CSV</button></p>
+    <div class="tbl" id="tVideos"></div>
+
+    <h2 class="serif">Referrers (ministries)</h2>
+    <p class="hint">Each ministry gets its own link. The first link a person ever arrives with is the one that counts (first touch), and it’s saved when they sign up. Active = visited in the last 7 / 30 days.</p>
+    <p class="hint"><button class="xbtn" data-csv="referrers" type="button">Download CSV</button></p>
+    <div class="tbl" id="tRefs"></div>
+    <form id="refForm" class="refform">
+      <p class="hint" style="margin:18px 0 8px"><b>Add a ministry</b></p>
+      <div class="row">
+        <input class="field" id="rCode" placeholder="Code, e.g. GRACECHAPEL" autocapitalize="characters" maxlength="40" required>
+        <input class="field" id="rName" placeholder="Ministry name" maxlength="120" required>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input class="field" id="rContact" placeholder="Contact name" maxlength="120">
+        <input class="field" id="rEmail" placeholder="Contact email or phone" maxlength="200">
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input class="field" id="rNote" placeholder="Commission note (e.g. 20% of first year)" maxlength="300">
+        <button class="btn" type="submit">Add</button>
+      </div>
+    </form>
+    <p class="msg" id="refMsg" role="status"></p>
+
+    <h2 class="serif">Who watched what</h2>
+    <p class="hint">Furthest point each person reached in each video. <button class="xbtn" data-csv="watch" type="button">Download CSV</button></p>
+    <div class="tbl" id="tWatch"></div>
+
+    <h2 class="serif">Invite testers</h2>
+    <p class="hint">Only emails on this list (or people arriving with a ministry link) can sign in. Paste one or more emails, then tap Add. Then send them the site link yourself.</p>
+    <form class="row" id="inviteForm">
+      <textarea class="field" id="inviteEmails" rows="2" placeholder="friend@example.com, another@example.com" style="padding:12px 14px"></textarea>
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <p class="msg" id="inviteMsg" role="status"></p>
+    <div class="tbl" id="tInvites"></div>
+
+    <h2 class="serif">Free access window</h2>
+    <p class="hint" id="accessHint">Each new member gets 30 free days (access until = sign-up + 30 days). This is only enforced after the paywall is switched on (SETUP.md, “Paywall later”). Give someone more time:</p>
+    <form class="row" id="accessForm">
+      <input class="field" id="aEmail" type="email" placeholder="member@example.com" required>
+      <input class="field" id="aDays" type="number" min="1" max="3650" value="30" style="flex:0 1 110px" aria-label="Days from today">
+      <button class="btn" type="submit">Set access</button>
+    </form>
+    <p class="msg" id="accessMsg" role="status"></p>
+
+    <h2 class="serif">Video sheet check</h2>
+    <p class="hint">What the site reads from the Google Sheet right now (Google can take up to 5 minutes to update). Rows with problems are shown in orange.</p>
+    <div class="tbl" id="tSheet"></div>
+
+    <h2 class="serif">Recent activity</h2>
+    <p class="hint">Latest 100 events. <button class="xbtn" data-csv="recent" type="button">Download CSV</button></p>
+    <div class="tbl" id="tRecent"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/kjv-verses.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script src="js/common.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
