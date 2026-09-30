@@ -151,6 +151,11 @@ a{color:var(--gold)}
 .setup-note{margin:20px 0 0; padding:12px 14px; border:1px dashed var(--line); border-radius:12px; font-size:13px; color:var(--muted); text-align:left}
 .gate .linkbtn{margin-top:10px}
 
+/* link back to the full timeline (simple view header) */
+.tl-link{margin:14px 0 0; font-size:15px}
+.tl-link a, .acct a{color:var(--gold); text-decoration:none}
+.tl-link a{display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border:1px solid var(--line); border-radius:22px; background:var(--gold-soft, rgba(217,184,112,.14))}
+
 /* footer account box */
 .acct{margin:26px 0 0; font-size:14px; color:var(--muted)}
 .acct p{margin:6px 0}
