@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#0e1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Thirtieth Year">
+<meta name="application-name" content="Thirtieth Year">
+<title>The Thirtieth Year · Simple view</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../ad30-simple/icon-180.png">
+<link rel="stylesheet" href="css/members.css">
+</head>
+<body>
+
+<!-- ============ SIGN-IN SCREEN (all that visitors see until they sign in) ============ -->
+<main class="gate" id="gate">
+  <h1 class="serif">The Thirtieth Year</h1>
+  <p class="lead">A quiet walk through the dates.<br>Enter your email to come in — no password.</p>
+
+  <form id="gForm" novalidate>
+    <label for="gEmail">Your email</label>
+    <input class="field" id="gEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="you@example.com" required>
+    <button class="btn" id="gSend" type="submit">Email me a sign-in link</button>
+  </form>
+
+  <form id="gCodeForm" novalidate hidden>
+    <p class="msg ok" style="margin-top:0">We emailed <b id="gSentTo"></b>. Tap the link in that email, <b>or</b> type the code from it here:</p>
+    <label for="gCode">Code from the email</label>
+    <input class="field code" id="gCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" placeholder="••••••">
+    <button class="btn" id="gVerify" type="submit">Sign in</button>
+    <button class="linkbtn" id="gResend" type="button">Send another email</button>
+    <button class="linkbtn" id="gBack" type="button">Use a different email</button>
+  </form>
+
+  <p class="msg" id="gMsg" role="status" aria-live="polite"></p>
+
+  <p class="privacy" id="privacy">Privacy: we record your email, which pages and videos you view and when, and the referral link you came from (if any) — used only for this study group. Unsubscribe or ask to be removed anytime.</p>
+
+  <div class="setup-note" id="gSetup" hidden>
+    <b>Not connected yet.</b> <code>js/config.js</code> still has placeholder values, so sign-in is switched off.
+    Follow SETUP.md to connect Supabase and the Google Sheet.
+    <a href="?demo=1">Preview with sample data →</a>
+  </div>
+</main>
+
+<!-- ============ FREE WINDOW ENDED (only when the paywall is switched on) ============ -->
+<main class="gate" id="ended" hidden>
+  <h1 class="serif">Thank you</h1>
+  <p class="lead">Your free 30 days have ended for <b id="endedWho"></b>.</p>
+  <p class="msg ok">Thanks for walking through the dates with us. Subscriptions are coming soon — Sam will be in touch about how to keep going.</p>
+  <button class="btn ghost" id="endedOut" type="button">Sign out</button>
+</main>
+
+<!-- ============ THE PAGE (after sign-in) ============ -->
+<div class="wrap" id="page" hidden>
+  <header>
+    <h1 class="serif">The Thirtieth Year</h1>
+    <p class="sub">A quiet walk through the dates</p>
+    <p class="tl-link"><a href="./">← Full interactive timeline</a></p>
+  </header>
+
+  <section class="count" aria-label="Countdown">
+    <div class="nums" role="timer" aria-live="off">
+      <div class="unit"><b id="cdD">–</b><span>Days</span></div>
+      <div class="unit"><b id="cdH">–</b><span>Hours</span></div>
+      <div class="unit"><b id="cdM">–</b><span>Min</span></div>
+    </div>
+    <p class="when" id="cdWhen"></p>
+  </section>
+
+  <ol class="path" id="path" aria-label="Markers"></ol>
+  <p class="status" id="vidStatus" role="status" aria-live="polite"></p>
+  <p class="src" id="dateSrc"></p>
+
+  <footer>
+    <p class="serif" id="footVerse"></p>
+    <cite id="footRef"></cite>
+    <button class="linkbtn" id="resetBtn" type="button" hidden>Reset watched marks</button>
+
+    <div class="acct">
+      <label class="switch" id="notifyBox" hidden><input type="checkbox" id="notify"> Email me when a new video is added</label>
+      <p id="accessLine" hidden></p>
+      <p>Signed in as <span id="whoami"></span> · <button class="linkbtn" id="signOut" type="button" style="margin:0;padding:0 6px">Sign out</button></p>
+      <p><a href="./">Full timeline</a> · <a id="adminLink" href="admin.html" hidden>Group leader view →</a></p>
+      <details class="track">
+        <summary>What this site records</summary>
+        <p>Your email address; the referral link you first arrived with (so partner ministries can be thanked); when you visit; which date cards you open; when you start a video and how far you get (25%, 50%, 75%, finished); when you use “Read it to me”. It’s used only by Sam and Ben to see how this study group is going. It isn’t sold or shared.
+        Turn off new-video emails with the switch above or the link in any email. To be removed completely, ask Sam.</p>
+      </details>
+    </div>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle" aria-hidden="true">
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sheet-top">
+    <div>
+      <h2 class="serif" id="shTitle"></h2>
+      <p class="d" id="shDate"></p>
+    </div>
+    <div class="acts">
+      <button class="icon" id="shShare" type="button" aria-label="Share this">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+      </button>
+      <button class="x" id="shClose" type="button" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div id="shMedia"></div>
+  <div class="nx" id="shNext" hidden>
+    <button class="go" id="shNextGo" type="button"><small id="shNextIn">Up next</small><span id="shNextT"></span></button>
+    <button class="cancel" id="shNextCancel" type="button">Cancel</button>
+  </div>
+  <blockquote class="serif" id="shQuote"><span id="shVerse"></span><cite id="shRef"></cite></blockquote>
+  <button class="read" id="shRead" type="button" aria-pressed="false">🔊 Read it to me</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" hidden>
+  <p>Tip: tap Share <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>, then “Add to Home Screen”.</p>
+  <button type="button" id="tipX" aria-label="Dismiss tip">✕</button>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/kjv-verses.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script src="js/common.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
