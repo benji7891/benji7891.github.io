@@ -23,5 +23,5 @@ window.AD30_CONFIG = {
   // Group leaders who may open admin.html (lower case). This list only controls what the
   // PAGE shows; the database separately checks its own "admins" table (schema.sql section 9),
   // so keep both lists the same. Putting an email here alone grants no data access.
-  ADMIN_EMAILS: ["benjiferguson@gmail.com"]
+  ADMIN_EMAILS: ["benjiferguson@gmail.com", "shughes@jstrongindustries.com"]
 };
