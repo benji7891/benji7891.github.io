@@ -8,6 +8,7 @@
 <title>Group leader view · The Thirtieth Year</title>
 <link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
 <link rel="stylesheet" href="css/members.css">
+<link rel="stylesheet" href="css/lessons.css">
 </head>
 <body class="admin">
 
@@ -40,6 +41,43 @@
   <p class="msg err" id="notAdmin" hidden>You’re signed in, but this email isn’t on the admin list.</p>
 
   <div id="adminBody" hidden>
+    <!-- ===== Add a lesson (js/lessons-admin.js; database table public.lessons) ===== -->
+    <section class="lx-admin" id="lxAdmin" aria-labelledby="lxH" hidden>
+      <h2 class="serif" id="lxH">Add a lesson</h2>
+      <p class="lx-tip">Tip: Upload your HeyGen video to YouTube as <b>Unlisted</b>, then paste the link here.</p>
+      <form id="lxForm" novalidate autocomplete="off">
+        <label class="lx-l" for="lxTitle">Title</label>
+        <input class="field" id="lxTitle" maxlength="200" placeholder="e.g. The Living Water" enterkeyhint="next">
+
+        <label class="lx-l" for="lxUrl">YouTube link</label>
+        <div class="lx-row"><input class="field" id="lxUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…" enterkeyhint="next"><button type="button" class="lx-paste" id="lxPaste" hidden>Paste</button></div>
+        <p class="lx-help" id="lxUrlMsg" aria-live="polite">In YouTube, tap <b>Share</b> → <b>Copy link</b>, then paste it here.</p>
+        <div class="lx-preview" id="lxPrev" hidden><span class="lx-thumb"><img id="lxPrevImg" alt="Picture from the video"></span><p id="lxPrevTxt"></p></div>
+
+        <label class="lx-l" for="lxMarker">Where on the timeline</label>
+        <select class="field" id="lxMarker"><option value="">General (top of page)</option></select>
+        <p class="lx-help">Pick the date or feast this lesson is about. Every lesson also shows in “Latest lessons” at the top of the site.</p>
+
+        <label class="lx-l" for="lxSummary">Summary <small>(optional)</small></label>
+        <textarea class="field" id="lxSummary" rows="6" maxlength="20000" placeholder="A few sentences about the lesson. You can paste this from Claude."></textarea>
+        <p class="lx-help">Members see this under the label <b>LESSON SUMMARY</b>, kept separate from the Bible text. Please don’t paste Bible verses here — use the box below.</p>
+
+        <label class="lx-l" for="lxRefs">Verse references <small>(optional)</small></label>
+        <input class="field" id="lxRefs" maxlength="1000" autocorrect="off" placeholder="e.g. John 7:37-38; Leviticus 23:34" enterkeyhint="done">
+        <p class="lx-help">Separate with “;”. The exact King James words are filled in for you — check them below.</p>
+        <div class="lx-vp" id="lxVerses" aria-live="polite"></div>
+
+        <button class="btn" id="lxSave" type="submit">Save lesson</button>
+        <button class="linkbtn lx-cancel" id="lxCancel" type="button" hidden>Cancel editing</button>
+        <p class="msg" id="lxMsg" role="status" aria-live="polite"></p>
+        <p class="lx-mail">✉️ <b>Email alerts start once email is set up.</b> Until then nobody gets an email when you add a lesson — members see it on the site with a <b>NEW</b> badge, so you may want to text the group.</p>
+      </form>
+
+      <h3 class="serif">Lessons on the site</h3>
+      <p class="hint" id="lxListMsg"></p>
+      <ul class="lx-items" id="lxItems"></ul>
+    </section>
+
     <p class="hint" id="updated"></p>
     <div class="cards" id="stats"></div>
 
@@ -110,6 +148,8 @@
 <script src="js/kjv-verses.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <script src="js/common.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/lessons-admin.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
