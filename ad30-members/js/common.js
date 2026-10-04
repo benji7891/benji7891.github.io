@@ -37,6 +37,20 @@
     var list = (C.ADMIN_EMAILS || []).map(function (x) { return String(x).trim().toLowerCase(); });
     return !!email && list.indexOf(String(email).toLowerCase()) >= 0;
   };
+  // [simple-rework] Is this signed-in person a group leader (teacher)? Same two checks the site already uses:
+  // the ADMIN_EMAILS list in config.js, then the database's own admins table (rpc am_i_admin). Resolves true/false,
+  // never fails (no answer within 8 s = false). NOTE: this only decides what the PAGES show (teacher view vs member
+  // view); it is not security. Real protection of data is the database's row-level security.
+  AD30.checkAdmin = function (user) {
+    if (AD30.demo) return Promise.resolve(true);
+    if (user && AD30.isAdminEmail(user.email)) return Promise.resolve(true);
+    if (!AD30.sb || !user) return Promise.resolve(false);
+    return new Promise(function (resolve) {
+      var done = false, fin = function (v) { if (!done) { done = true; clearTimeout(t); resolve(v); } };
+      var t = setTimeout(function () { fin(false); }, 8000);
+      AD30.sb.rpc("am_i_admin").then(function (r) { fin(!!(r && r.data === true)); }, function () { fin(false); });
+    });
+  };
 
   /* ---------------- Supabase client ---------------- */
   AD30.sb = null;
@@ -201,9 +215,11 @@
       user_agent: (navigator.userAgent || "").slice(0, 300), marker_id: f.marker_id, video_id: f.video_id,
       video_title: f.video_title, progress_pct: typeof f.progress_pct === "number" ? Math.max(0, Math.min(100, Math.round(f.progress_pct))) : undefined });
     window.__ad30events.push(row);
-    if (AD30.demo) { if (window.console) console.info("[demo] would log", row); return; }
-    if (!AD30.sb || !AD30.user) return;
-    AD30.sb.from("events").insert(row).then(function (res) {
+    // [simple-rework] returns a promise (settles when the event is saved or queued) so index.html can wait for
+    // the sign_in event before sending a member on to the member view.
+    if (AD30.demo) { if (window.console) console.info("[demo] would log", row); return Promise.resolve(); }
+    if (!AD30.sb || !AD30.user) return Promise.resolve();
+    return AD30.sb.from("events").insert(row).then(function (res) {
       if (res.error) {
         if (isNetErr(res.error)) { var q = LS.get(QKEY, []); q.push(row); LS.set(QKEY, q.slice(-200)); }
         else if (window.console) console.warn("event not saved:", res.error.message);

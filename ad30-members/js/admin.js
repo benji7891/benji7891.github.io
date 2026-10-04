@@ -224,6 +224,7 @@
         }
         if (!inConfig && !AD30.demo && window.console) console.warn("Admin in database but not in AD30_CONFIG.ADMIN_EMAILS - add it so the site shows the admin link.");
         $("adminBody").hidden = false;
+        try { if (window.AD30LA) window.AD30LA.start(user); } catch (e) { if (window.console) console.warn("[lessons]", e); }
         refresh(); sheetCheck();
       });
     },

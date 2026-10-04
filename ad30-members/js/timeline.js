@@ -311,11 +311,34 @@
   }
 
   /* ================= start after sign-in ================= */
+  // [simple-rework] This full timeline is the TEACHER view, for group leaders only (AD30.checkAdmin in common.js:
+  // ADMIN_EMAILS, then the database's admins table). Everyone else is sent to the member view (simple.html),
+  // taking any #link along. This only changes what the page shows: the timeline's text is still in this file's HTML.
+  function cover(on) {   // plain "Opening…" screen while we check who is signing in (so nothing flashes)
+    var c = $("routing");
+    if (!on) { if (c) c.parentNode.removeChild(c); return; }
+    if (c) return;
+    c = document.createElement("div"); c.id = "routing"; c.setAttribute("role", "status"); c.textContent = "Opening…";
+    c.style.cssText = "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:#0e1116;color:#9a9fa8;font:17px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+    document.body.appendChild(c);
+  }
+  function toMemberView(waitFor) {
+    var h = location.hash.slice(1); if (/access_token|error_code/.test(h)) h = "";
+    var go = function () { location.replace("simple.html" + (h ? "#" + h : "")); };
+    // give the sign_in event up to 1.5 s to be saved before leaving the page
+    Promise.race([waitFor || Promise.resolve(), new Promise(function (r) { setTimeout(r, 1500); })]).then(go, go);
+  }
   AD30.startAuth({
     onIn: function (user, how) {
       if (started) return; started = true;
-      if (how === "link" || how === "code") AD30.track("sign_in");
-      checkAccess(user).then(function (ok) { if (ok) showSite(user); });
+      cover(true);
+      var signInEvt = (how === "link" || how === "code") ? AD30.track("sign_in") : null;
+      checkAccess(user).then(function (ok) {
+        if (!ok) { cover(false); return; }
+        AD30.checkAdmin(user).then(function (isAdmin) {
+          if (isAdmin) { cover(false); showSite(user); } else toMemberView(signInEvt);
+        });
+      });
     },
     onOut: function () { $("page").hidden = true; }
   });
@@ -325,6 +348,12 @@
     var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", "#ffffff");   // light status bar over the light timeline
     AD30.track("page_view");
     setupAccount(user);
+    // Video lessons added on the group leader page (js/lessons.js). Any failure here is silent: the page works as before.
+    var lessonsDone = Promise.resolve();
+    try {
+      if (window.AD30L) lessonsDone = window.AD30L.timeline({ setOpen: setOpen, openTarget: openTarget, mountYT: mountYT, badge: badge, apply: apply, paintWatched: paintWatched })
+        .catch(function () {});
+    } catch (e) {}
     AD30.loadVideos().then(function (s) {
       attachSheet(s.videos || []);
       window.__ad30sheet = s;
@@ -334,7 +363,7 @@
       if (!h) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
       var want = h || LS.get("ad30m.deeplink", "");
       LS.del("ad30m.deeplink");
-      if (want) openTarget(want);
+      if (want) lessonsDone.then(function () { openTarget(want); });
     });
   }
 
