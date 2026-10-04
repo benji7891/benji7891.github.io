@@ -1,0 +1,140 @@
+/* AD30 members - MEMBER VIEW styles (simple.html).                          [simple-rework, new file]
+   sx-*  = the list of sections (accordion), on the calm dark page from members.css
+   nt-*  = Study notes: a light, large-print reading page, plus the print layout
+   Loaded after members.css; only adds new class names, so nothing else on the site changes. */
+
+/* ---------- header: which view you're in (group leaders only see this) ---------- */
+.sx-viewname{display:inline-block; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-right:8px}
+
+/* ---------- the list ---------- */
+.sx-hint{text-align:center; color:var(--muted); font-size:15px; margin:56px 0 0}
+.sx-list{list-style:none; margin:16px 0 0; padding:0}
+.sx-item{margin:0 0 14px; border:1px solid var(--line); border-radius:20px; background:var(--panel); overflow:hidden;
+  transition:border-color .2s ease}
+.sx-item.open{border-color:rgba(217,184,112,.55)}
+.sx-h{margin:0; font:inherit}
+.sx-btn{width:100%; min-height:88px; display:flex; align-items:center; gap:16px; padding:14px 18px 14px 14px;
+  background:none; border:0; color:inherit; font:inherit; text-align:left; cursor:pointer; border-radius:20px;
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation}
+.sx-btn:active{background:var(--gold-soft)}
+.sx-btn:focus-visible{outline:3px solid var(--gold); outline-offset:-3px}
+.sx-ic{flex:0 0 46px; height:46px; border-radius:50%; border:1px solid var(--line); background:var(--bg);
+  display:grid; place-items:center; position:relative}
+.sx-ic i{width:10px; height:10px; border-radius:50%; background:var(--gold); opacity:.8}
+.sx-item.has-video .sx-ic{border-color:var(--gold)}
+.sx-item.has-video .sx-ic i{width:0; height:0; border-radius:0; background:none; opacity:1; margin-left:3px;
+  border-left:12px solid var(--gold); border-top:8px solid transparent; border-bottom:8px solid transparent}
+.sx-ic b{display:none; position:absolute; right:-4px; bottom:-4px; width:20px; height:20px; border-radius:50%;
+  background:var(--bg); border:1px solid var(--line); color:var(--muted); font:700 12px/18px system-ui,sans-serif; text-align:center}
+.sx-item.visited .sx-ic b{display:block}
+.sx-item.watched .sx-ic{background:var(--gold); border-color:var(--gold)}
+.sx-item.watched .sx-ic i{display:none}
+.sx-item.watched .sx-ic b{display:block; position:static; width:auto; height:auto; border:0; background:none; color:#1a1507; font-size:22px; line-height:1}
+.sx-tt{flex:1 1 auto; min-width:0}
+.sx-t{display:block; font-size:26px; line-height:1.2; color:var(--text)}
+.sx-d{display:block; font-size:16px; color:var(--muted); margin-top:4px}
+.sx-chev{flex:0 0 28px; height:28px; position:relative}
+.sx-chev::before{content:""; position:absolute; left:8px; top:5px; width:10px; height:10px; border-right:2px solid var(--muted);
+  border-bottom:2px solid var(--muted); transform:rotate(45deg); transition:transform .25s ease}
+.sx-item.open .sx-chev::before{transform:translate(0,6px) rotate(-135deg); border-color:var(--gold)}
+.sx-more-h{margin:30px 0 12px; color:var(--muted); font-size:13px; text-transform:uppercase; letter-spacing:.16em; text-align:center}
+
+/* ---------- an open section ---------- */
+.sx-panel{transition:height .32s cubic-bezier(.2,.8,.2,1)}
+.sx-in{padding:4px 20px 22px; border-top:1px solid var(--line)}
+.sx-when{color:var(--muted); font-size:15px; margin:16px 0 0}
+.sx-desc{font-size:19px; line-height:1.6; margin:12px 0 0; color:var(--text)}
+.sx-videos{margin:18px 0 0}
+.sx-vid{margin:0 0 14px}
+.sx-vid video, .sx-ytbox{display:block; width:100%; aspect-ratio:16/9; background:#000; border-radius:14px}
+.sx-ytbox iframe, .sx-ytbox > div{width:100%; height:100%; border:0; border-radius:14px; display:block}
+.sx-vid figcaption{color:var(--muted); font-size:14px; margin-top:8px}
+.sx-soon{color:var(--muted); font-style:italic; font-size:16px; margin:0}
+.sx-scrip{margin:22px 0 0}
+.sx-sh{display:flex; align-items:center; gap:10px; margin:0 0 6px; font-size:15px; font-weight:600; color:var(--text); letter-spacing:.01em}
+.sx-tag{display:inline-block; font:800 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; letter-spacing:.08em;
+  padding:5px 8px; border-radius:6px; background:#2d5f8a; color:#fff}
+.sx-v{margin:16px 0 0; padding:0 0 0 16px; border-left:3px solid #2d5f8a; font-size:21px}
+.sx-v p{margin:0; font-size:21px; line-height:1.55; font-style:italic}
+.sx-v cite{display:block; margin-top:8px; font-size:15px; font-style:normal; color:var(--gold); letter-spacing:.03em}
+.sx-moreverses{color:var(--muted); font-size:15px; margin:14px 0 0}
+.sx-notes{display:flex; align-items:center; justify-content:center; gap:10px; margin:26px 0 0; width:100%; min-height:60px;
+  border-radius:16px; border:1px solid var(--gold); background:var(--gold); color:#1a1507; font:inherit; font-size:20px; font-weight:600;
+  cursor:pointer; touch-action:manipulation}
+.sx-notes::before{content:""; width:20px; height:16px; border:2px solid currentColor; border-radius:2px 2px 3px 3px;
+  background:linear-gradient(currentColor,currentColor) center/2px 100% no-repeat}
+.sx-notes:focus-visible, .sx-link:focus-visible{outline:3px solid var(--text); outline-offset:3px}
+.sx-row{display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin:12px 0 0}
+.sx-link{min-height:48px; padding:0 12px; background:none; border:0; color:var(--gold); font:inherit; font-size:16px; cursor:pointer;
+  text-decoration:underline; text-underline-offset:4px; touch-action:manipulation}
+.sx-next{margin-left:auto; text-align:right}
+
+/* ---------- Study notes (screen) ---------- */
+.notes-open, .notes-open body{overflow:hidden}
+.nt{position:fixed; inset:0; z-index:30; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  background:#fbf8f1; color:#1f1b16;
+  padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.nt-bar{position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px; background:rgba(251,248,241,.96); border-bottom:1px solid #e3d9c6;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
+.nt-btn{min-height:52px; min-width:52px; padding:0 18px; border-radius:14px; border:1px solid #cbbd9f; background:#fff; color:#3b2a1a;
+  font:600 18px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; cursor:pointer; touch-action:manipulation}
+.nt-primary{background:#3b2a1a; border-color:#3b2a1a; color:#fbf8f1}
+.nt-btn:focus-visible{outline:3px solid #2d5f8a; outline-offset:2px}
+.nt-page{max-width:42rem; margin:0 auto; padding:8px 22px 10px; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:21px; line-height:1.65}
+.nt-allh{font:600 14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; letter-spacing:.12em; text-transform:uppercase;
+  color:#7a6a58; margin:22px 0 0}
+.nt-sec{padding:6px 0 26px}
+.nt-sec + .nt-sec{border-top:2px solid #e3d9c6; margin-top:12px}
+.nt-kick{margin:22px 0 0; font:600 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; letter-spacing:.14em;
+  text-transform:uppercase; color:#7a6a58}
+.nt-h1{font-weight:600; font-size:34px; line-height:1.2; margin:6px 0 0; color:#2a1d10}
+.nt-h1:focus{outline:none}
+.nt-date{margin:6px 0 0; font-size:17px; color:#6b5c4b; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.nt-desc{margin:18px 0 0}
+.nt-scrip, .nt-teach{margin:28px 0 0}
+.nt-scrip .sx-sh{font:700 17px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:#2a1d10}
+.nt-head{text-align:left}
+.nt-v{margin:16px 0 0; padding:2px 0 2px 16px; border-left:4px solid #2d5f8a; font-size:1em; line-height:inherit}
+.nt-v p{margin:0; font-style:italic}
+.nt-v cite{display:block; margin-top:6px; font:600 16px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-style:normal; color:#2d5f8a}
+.nt-th{font:700 17px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; margin:0; color:#2a1d10;
+  padding-top:18px; border-top:1px solid #e3d9c6}
+.nt-note{margin:4px 0 0; font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:#6b5c4b}
+.nt-g{font-size:19px; font-weight:600; margin:18px 0 0; color:#5a3d6b}
+.nt-list{margin:8px 0 0; padding-left:1.2em}
+.nt-list li{margin:10px 0 0}
+.nt-meta{margin:26px 0 0; font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:#7a6a58}
+.nt-pdate{display:none}
+.nt-end{max-width:42rem; margin:0 auto; padding:10px 22px calc(40px + env(safe-area-inset-bottom)); display:grid; gap:12px}
+.nt-wide{width:100%; min-height:58px}
+.nt-ghost{background:transparent}
+
+/* ---------- printing: only the study notes, black on white ---------- */
+@media print {
+  @page { margin: 18mm 17mm 20mm; }
+  html, body{background:#fff !important; color:#000 !important; padding:0 !important; margin:0 !important; overflow:visible !important}
+  body{font-size:12pt}
+  .notes-open body > *:not(#notes){display:none !important}
+  .nt{position:static !important; inset:auto; overflow:visible !important; background:#fff !important; color:#000 !important; padding:0 !important}
+  .nt-bar, .nt-end, .nt button, video, iframe, .toast, .tip{display:none !important}
+  .nt-page{max-width:none; padding:0; font-size:13pt; line-height:1.5}
+  .nt-allh{display:none}
+  .nt-sec{padding:0}
+  .nt-sec + .nt-sec{break-before:page; page-break-before:always; border-top:0; margin-top:0}
+  .nt-kick{margin-top:0; color:#444}
+  .nt-h1{font-size:22pt; color:#000}
+  .nt-date, .nt-note, .nt-meta{color:#333}
+  .nt-v{border-left:2.5pt solid #555}
+  .nt-v cite, .nt-g{color:#000}
+  .nt-scrip .sx-sh .sx-tag{background:none !important; color:#000 !important; border:1pt solid #000; padding:2pt 4pt}
+  .nt-pdate{display:inline}
+  .nt-v, .nt-list li, .nt-desc{break-inside:avoid; page-break-inside:avoid}
+  .nt-head, .nt-scrip .sx-sh, .nt-th, .nt-g{break-after:avoid; page-break-after:avoid}
+  .nt-meta{border-top:1px solid #999; padding-top:6pt}
+  /* printing the list page itself (no notes open): hide buttons and players, keep the words */
+  html:not(.notes-open) .sx-notes, html:not(.notes-open) .sx-row, html:not(.notes-open) .sx-videos,
+  html:not(.notes-open) .acct, html:not(.notes-open) .linkbtn{display:none !important}
+}

@@ -40,6 +40,9 @@
   border-radius:16px; padding:6px 12px; min-height:34px; display:inline-flex; align-items:center}
 .mstrip a[hidden], .acct [hidden]{display:none !important}
 .mstrip .who{margin-left:auto; overflow-wrap:anywhere}
+/* [simple-rework] "Teacher view" label (this page) next to the "Member view" link */
+.mstrip .vw-cur{font-weight:800; color:#fff; background:var(--brown); border:1px solid var(--brown); border-radius:16px;
+  padding:6px 12px; min-height:34px; display:inline-flex; align-items:center}
 
 /* account box inside the timeline footer */
 .acct{margin:18px auto 0; max-width:520px; font-family:var(--sans); font-size:14px; color:#555; text-align:center}
