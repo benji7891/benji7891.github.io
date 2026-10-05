@@ -10,6 +10,21 @@
   var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var started = false;
 
+  // [hotfix-cd] 10 Nisan countdown - Teacher view only (removed from the member view, Oct 4 2026).
+  // 10 Nisan 5790 begins at sunset in Jerusalem on Fri Apr 12, 2030 (19:07 IDT). Same target/label as the old member countdown.
+  (function () {
+    var d = $("cdD"); if (!d) return;
+    var target = new Date("2030-04-12T19:07:00+03:00").getTime();
+    $("cdWhen").textContent = "10 Nisan · Sat Apr 13, 2030";
+    function tick() {
+      var ms = Math.max(0, target - Date.now()), totalMin = Math.floor(ms / 60000);
+      d.textContent = Math.floor(totalMin / 1440).toLocaleString("en-US");
+      $("cdH").textContent = Math.floor((totalMin % 1440) / 60);
+      var m = totalMin % 60; $("cdM").textContent = m < 10 ? "0" + m : m;
+    }
+    tick(); setInterval(tick, 15000);
+  })();
+
   /* ================= timeline behaviour (ported unchanged from /ad30-timeline/) ================= */
   function bh() { document.documentElement.style.setProperty("--barh", bar.offsetHeight + "px"); }
   bh(); window.addEventListener("resize", bh);

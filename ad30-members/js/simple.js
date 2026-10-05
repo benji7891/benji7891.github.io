@@ -1,6 +1,6 @@
 /* AD30 members - MEMBER VIEW (simple.html).                                         [simple-rework, new file]
    Replaces js/app.js on simple.html. What members see:
-     * the countdown (unchanged),
+     * (no countdown: the 10 Nisan countdown is Teacher view only since Oct 4 2026; the code below is skipped),
      * a list of big section titles in date order; tapping one opens it (one at a time) to show a short
        description, the video (if the section has one), the key KJV verses, and a "Study notes" button,
      * Study notes: a clean, large-print read-along page for a section (or all sections) with Print.
@@ -30,15 +30,17 @@
     dateSource: "Dates from Professor Zac’s guide · last two counted from it"
   };
   var FOOTER = { verse: "But of that day and hour knoweth no man, no, not the angels of heaven, but my Father only.", ref: "Matthew 24:36" };
+  // The 10 Nisan countdown is Teacher view only (Ben, Oct 4 2026). This runs only if the countdown markup is present.
   var target = new Date(CONFIG.countdownTarget).getTime();
-  $("cdWhen").textContent = CONFIG.countdownLabel;
-  $("dateSrc").textContent = CONFIG.dateSource;
+  if ($("cdWhen")) $("cdWhen").textContent = CONFIG.countdownLabel;
+  if ($("dateSrc")) $("dateSrc").textContent = CONFIG.dateSource;
   function tick() {
+    if (!$("cdD")) return;
     var ms = Math.max(0, target - Date.now()), totalMin = Math.floor(ms / 60000);
     var d = Math.floor(totalMin / 1440), h = Math.floor((totalMin % 1440) / 60), m = totalMin % 60;
     $("cdD").textContent = d.toLocaleString("en-US"); $("cdH").textContent = h; $("cdM").textContent = m < 10 ? "0" + m : m;
   }
-  tick(); setInterval(tick, 15000);
+  if ($("cdD")) { tick(); setInterval(tick, 15000); }
   $("footVerse").textContent = "“" + FOOTER.verse + "”";
   $("footRef").textContent = FOOTER.ref + " (KJV)";
 
