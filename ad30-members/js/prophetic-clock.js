@@ -1,4 +1,4 @@
-/* AD30 members - God's Time Clock, OPTION A: antique face (member view, simple.html).   [clock-panel, new file]
+/* AD30 members - God's Time Clock, antique face (member view, simple.html). Sam's pick; olive-leaf hands removed.   [clock-panel, new file]
    Web version of Ben's desktop app gtc-program/biblical_prophecy/gwc_clock.py ("Prophetic Clock").
    Needs js/gtc-core.js first (shared date math, words, settings: CLOCK_OPTIONS / SHOW_GWC_EVENTS).
    The date math lives in gtc-core.js and is checked against the desktop app:
@@ -17,42 +17,27 @@
 
   /* ---------------- the hands (drawn, so the painted face can stay clean) ----------------
      The face picture had its painted hands removed (img/clock-face.webp); these two hands replace them, so there is
-     only ever ONE set of hands on the clock. Pivot = the brass hub at (400, 402) on an 800 x 800 face. */
+     only ever ONE set of hands on the clock. Pivot = the brass hub at (400, 402) on an 800 x 800 face.
+     Sam asked for the antique face "without the olive leaves" — both hands are clean bronze needles, no leaf/branch
+     shapes. Hour = shorter pointed needle; minute = longer pointed lance; counterweights behind the hub. */
   var HANDS_SVG =
     '<svg class="gtc-hands" viewBox="0 0 800 800" aria-hidden="true" focusable="false">' +
     '<defs>' +
-    '<linearGradient id="gtcBronze" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#e9c77f"/><stop offset=".45" stop-color="#a87532"/><stop offset="1" stop-color="#5a3a15"/></linearGradient>' +
-    '<linearGradient id="gtcLeaf" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#9aa574"/><stop offset=".55" stop-color="#5f6c3e"/><stop offset="1" stop-color="#36401f"/></linearGradient>' +
-    '<filter id="gtcShadow" x="-30%" y="-10%" width="160%" height="130%"><feDropShadow dx="4" dy="6" stdDeviation="4" flood-color="#2a1a08" flood-opacity=".45"/></filter>' +
+    '<linearGradient id="gtcBronze" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#f0d48a"/><stop offset=".42" stop-color="#b07a2e"/><stop offset="1" stop-color="#4a2f10"/></linearGradient>' +
+    '<filter id="gtcShadow" x="-30%" y="-10%" width="160%" height="130%"><feDropShadow dx="3" dy="5" stdDeviation="3.5" flood-color="#2a1a08" flood-opacity=".42"/></filter>' +
     '</defs>' +
-    // hour hand: the olive branch (12:xx, so it stays near XII and creeps 0.5 degree a minute)
+    // hour hand: short, solid bronze needle (pointed tip + counterweight). No fleur, no leaves, no branch.
     '<g id="gtcHour" filter="url(#gtcShadow)">' +
-      '<path d="M400 452 L410 432 L400 420 L390 432 Z" fill="#c9a24a" stroke="#6b4f1c" stroke-width="2"/>' +
-      '<path d="M400 420 C 401 360, 398 300, 401 196" fill="none" stroke="#c9a24a" stroke-width="7" stroke-linecap="round"/>' +
-      leafPairs() +
+      '<path d="M400 478 L414 456 L410 402 L414 280 L400 175 L386 280 L390 402 L386 456 Z" fill="url(#gtcBronze)" stroke="#3d250c" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M400 188 L400 402" stroke="#f6e0a8" stroke-opacity=".5" stroke-width="2.2"/>' +
     '</g>' +
-    // minute hand: one clear bronze lance
+    // minute hand: longer, thinner bronze lance with a sharp tip and counterweight
     '<g id="gtcMin" filter="url(#gtcShadow)">' +
-      '<path d="M400 92 L410 300 L415 402 L409 470 L400 494 L391 470 L385 402 L390 300 Z" fill="url(#gtcBronze)" stroke="#4a2f10" stroke-width="2.5" stroke-linejoin="round"/>' +
-      '<path d="M400 108 L400 392" stroke="#f6dc9c" stroke-opacity=".55" stroke-width="2"/>' +
+      '<path d="M400 92 L409 290 L413 402 L408 478 L400 502 L392 478 L387 402 L391 290 Z" fill="url(#gtcBronze)" stroke="#3d250c" stroke-width="2.2" stroke-linejoin="round"/>' +
+      '<path d="M400 106 L400 392" stroke="#f6e0a8" stroke-opacity=".55" stroke-width="1.8"/>' +
     '</g>' +
     '<circle id="gtcNowDot" class="gtc-nowdot" r="13" cx="400" cy="56"/>' +
     '</svg>';
-  function leafPairs() {
-    var s = "", ys = [396, 362, 328, 294, 260, 230];
-    for (var i = 0; i < ys.length; i++) {
-      var y = ys[i], len = 62 - i * 3.5;
-      s += leaf(400, y, -50 + i * 3, len) + leaf(400, y - 16, 50 - i * 3, len);
-    }
-    return s + leaf(401, 214, 0, 46);
-  }
-  function leaf(x, y, ang, len) {     // a pointed olive leaf from (x, y), pointing up and out by ang degrees
-    var w = len * 0.3;
-    return '<path transform="rotate(' + ang + ' ' + x + ' ' + y + ')" d="M' + x + ' ' + y +
-      ' Q ' + (x + w) + ' ' + (y - len * 0.5) + ' ' + x + ' ' + (y - len) + ' Q ' + (x - w) + ' ' + (y - len * 0.5) + ' ' + x + ' ' + y + ' Z"' +
-      ' fill="url(#gtcLeaf)" stroke="#33401f" stroke-width="1.6"/>' +
-      '<path transform="rotate(' + ang + ' ' + x + ' ' + y + ')" d="M' + x + ' ' + (y - 3) + ' L ' + x + ' ' + (y - len * 0.85) + '" stroke="#d8d2a0" stroke-opacity=".45" stroke-width="1.4"/>';
-  }
 
   /* ---------------- the panel ---------------- */
   function mount(panel) {

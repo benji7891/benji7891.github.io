@@ -1,17 +1,15 @@
-/* AD30 members - God's Time Clock: SHARED core for the clock panels on the member view.   [clock-panel, new file]
+/* AD30 members - God's Time Clock: SHARED core for the clock panel on the member view.   [clock-panel, new file]
    One place for: which clock designs are on (CLOCK_OPTIONS), the date math, words/verses, "Right now",
-   the events list loader, and the page layout hooks. Each design is its own file:
-     Option A  js/prophetic-clock.js        + css/prophetic-clock.css         (antique face, left)
-     Option B  js/prophetic-clock-modern.js + css/prophetic-clock-modern.css  (modern, Cursor iPhone mockup, right)
-   To keep just one: change CLOCK_OPTIONS below (e.g. ["modern"]), then later delete the other design's two files,
-   its <aside> and its <link>/<script> lines in simple.html. Layout adapts to one or two clocks by itself.
+   the events list loader, and the page layout hooks.
+   Winner (Sam, Oct 2026): antique face only — js/prophetic-clock.js + css/prophetic-clock.css.
+   CLOCK_OPTIONS still exists so a second design can be re-added later without rewriting the layout.
    The date math is a straight port of Ben's desktop app gtc-program/biblical_prophecy/gwc_clock.py (checked against it).
    Plain ES5 (older iPhones, no build step). */
 (function (root) {
   "use strict";
 
   var CONFIG = {
-    CLOCK_OPTIONS: ["antique", "modern"],   // which clock panels to show: "antique" (A, left) and/or "modern" (B, right)
+    CLOCK_OPTIONS: ["antique"],              // Sam chose antique (Oct 2026). Was ["antique","modern"]; switch kept so a second design can be re-added later.
     // "What happened at this time" (Great World Clock data, data/gwc-events.json). OFF until Ben confirms permission.
     // While false: no events section in either panel and the JSON is never downloaded.
     SHOW_GWC_EVENTS: false,
