@@ -22,10 +22,9 @@
 <link rel="stylesheet" href="css/lessons.css">
 <link rel="stylesheet" href="css/lessons-member.css">
 <link rel="stylesheet" href="css/resources.css">
-<!-- [clock-panel] God's Time Clock: layout + Option A (antique) + Option B (modern). Remove the losing option's <link> later. -->
+<!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
 <link rel="stylesheet" href="css/gtc-layout.css">
 <link rel="stylesheet" href="css/prophetic-clock.css">
-<link rel="stylesheet" href="css/prophetic-clock-modern.css">
 </head>
 <body>
 
@@ -69,12 +68,11 @@
 </main>
 
 <!-- ============ THE PAGE (after sign-in) ============ -->
-<!-- [clock-panel] God's Time Clock. Option A (antique) = #gtcPanel, Option B (modern) = #gtmPanel. Filled by js/prophetic-clock*.js,
-     shown only while #page is. Wide screens: A left, B right (900-1199px: both left). Phones: two bars at the top. -->
+<!-- [clock-panel] God's Time Clock (#gtcPanel). Filled by js/prophetic-clock.js, shown only while #page is.
+     Wide screens: sticky left column. Phones: one collapsed bar at the top. -->
 <div class="gtc-shell">
 <div class="gtc-rail">
-<aside class="gtc-side gtc-side-a" id="gtcPanel" aria-label="God's Time Clock, option A" hidden></aside>
-<aside class="gtc-side gtc-side-b" id="gtmPanel" aria-label="God's Time Clock, option B" hidden></aside>
+<aside class="gtc-side gtc-side-a" id="gtcPanel" aria-label="God's Time Clock" hidden></aside>
 </div>
 <div class="wrap" id="page" hidden>
   <header>
@@ -158,9 +156,8 @@
 <script src="js/lessons-member.js"></script>
 <script src="js/simple-data.js"></script>
 <script src="js/simple.js"></script>
-<!-- [clock-panel] God's Time Clock: shared core (CLOCK_OPTIONS, date math) first, then each option -->
+<!-- [clock-panel] God's Time Clock: shared core (date math) then the antique panel -->
 <script src="js/gtc-core.js"></script>
 <script src="js/prophetic-clock.js"></script>
-<script src="js/prophetic-clock-modern.js"></script>
 </body>
 </html>
