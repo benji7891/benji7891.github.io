@@ -22,6 +22,10 @@
 <link rel="stylesheet" href="css/lessons.css">
 <link rel="stylesheet" href="css/lessons-member.css">
 <link rel="stylesheet" href="css/resources.css">
+<!-- [clock-panel] God's Time Clock: layout + Option A (antique) + Option B (modern). Remove the losing option's <link> later. -->
+<link rel="stylesheet" href="css/gtc-layout.css">
+<link rel="stylesheet" href="css/prophetic-clock.css">
+<link rel="stylesheet" href="css/prophetic-clock-modern.css">
 </head>
 <body>
 
@@ -65,6 +69,13 @@
 </main>
 
 <!-- ============ THE PAGE (after sign-in) ============ -->
+<!-- [clock-panel] God's Time Clock. Option A (antique) = #gtcPanel, Option B (modern) = #gtmPanel. Filled by js/prophetic-clock*.js,
+     shown only while #page is. Wide screens: A left, B right (900-1199px: both left). Phones: two bars at the top. -->
+<div class="gtc-shell">
+<div class="gtc-rail">
+<aside class="gtc-side gtc-side-a" id="gtcPanel" aria-label="God's Time Clock, option A" hidden></aside>
+<aside class="gtc-side gtc-side-b" id="gtmPanel" aria-label="God's Time Clock, option B" hidden></aside>
+</div>
 <div class="wrap" id="page" hidden>
   <header>
     <h1 class="serif">The Thirtieth Year</h1>
@@ -114,6 +125,7 @@
     </div>
   </footer>
 </div>
+</div><!-- /gtc-shell [clock-panel] -->
 
 <!-- [simple-rework] Study notes: a clean read-along page for one section (or all of them) with Print.
      Replaces the old bottom sheet and its "Read it to me" button. Filled in by js/simple.js. -->
@@ -146,5 +158,9 @@
 <script src="js/lessons-member.js"></script>
 <script src="js/simple-data.js"></script>
 <script src="js/simple.js"></script>
+<!-- [clock-panel] God's Time Clock: shared core (CLOCK_OPTIONS, date math) first, then each option -->
+<script src="js/gtc-core.js"></script>
+<script src="js/prophetic-clock.js"></script>
+<script src="js/prophetic-clock-modern.js"></script>
 </body>
 </html>
