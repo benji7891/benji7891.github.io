@@ -51,24 +51,45 @@
     sel.value = cur || "";
   }
 
-  /* ---------- YouTube link: check + picture + title from YouTube ---------- */
+  /* ---------- video link: Google Drive (preview with Drive's player) or YouTube (picture + title from YouTube) ---------- */
+  var HELP = "Paste a Google Drive video link. In Drive, set sharing to <b>Anyone with the link</b> can view.";
   var URL_ERR = {
-    notlink: "That doesn’t look like a link. In YouTube tap <b>Share</b> → <b>Copy link</b>, then paste it here.",
-    notyoutube: "That link isn’t a YouTube link. Please paste the link from YouTube.",
-    playlist: "That’s a playlist link. Open the single video, tap <b>Share</b> → <b>Copy link</b>, and paste that.",
-    noid: "We couldn’t find the video in that link. In YouTube tap <b>Share</b> → <b>Copy link</b>, then paste it here."
+    notlink: "That doesn’t look like a link. In Google Drive, open the video, tap <b>Share</b> → <b>Copy link</b>, then paste it here.",
+    notvideo: "That link isn’t a Google Drive or YouTube video link. In Google Drive, open the video, tap <b>Share</b> → <b>Copy link</b>, and paste that.",
+    folder: "That’s a link to a Google Drive <b>folder</b>. Open the video file itself, tap <b>Share</b> → <b>Copy link</b>, and paste that.",
+    gdoc: "That’s a Google Docs / Sheets / Slides link, not a video. (To share a document, use “Add a resource” below.)",
+    playlist: "That’s a YouTube playlist link. Open the single video, tap <b>Share</b> → <b>Copy link</b>, and paste that.",
+    noid: "We couldn’t find the video in that link. In Google Drive, open the video, tap <b>Share</b> → <b>Copy link</b>, then paste it here."
   };
+  function drivePreview(id) {
+    var box = $("lxDPrev"), fr = $("lxDFrame"); if (!box || !fr) return;
+    if (!id) { box.hidden = true; fr.innerHTML = ""; fr.removeAttribute("data-id"); return; }
+    box.hidden = false;
+    if (fr.getAttribute("data-id") === id) return;
+    fr.setAttribute("data-id", id); fr.innerHTML = "";
+    var f = document.createElement("iframe");
+    f.src = L.driveEmbed(id); f.title = "Preview of the Google Drive video";
+    f.allow = "autoplay; fullscreen; encrypted-media"; f.setAttribute("allowfullscreen", "");
+    fr.appendChild(f);
+  }
   function checkUrl(final) {
-    var v = $("lxUrl").value, r = L.parseYouTube(v), msg = $("lxUrlMsg"), prev = $("lxPrev"), my = ++seq;
+    var v = $("lxUrl").value, r = L.parseVideo(v), msg = $("lxUrlMsg"), prev = $("lxPrev"), my = ++seq;
     urlState = r;
     if (r.error) {
-      prev.hidden = true;
-      if (r.error === "empty") setHelp(msg, "In YouTube, tap <b>Share</b> → <b>Copy link</b>, then paste it here.");
-      else if (final || v.length > 12) setHelp(msg, URL_ERR[r.error], "lx-warn");
+      prev.hidden = true; drivePreview(null);
+      if (r.error === "empty") setHelp(msg, HELP);
+      else if (final || v.length > 12) setHelp(msg, URL_ERR[r.error] || URL_ERR.noid, "lx-warn");
       return;
     }
-    var dup = rows.filter(function (x) { return x.youtube_id === r.id && (!editing || x.id !== editing.id); })[0];
-    setHelp(msg, "Video found ✓" + (dup ? " — <b>but you already added this video</b> (“" + esc(dup.title) + "”)." : ""), dup ? "lx-warn" : "lx-good");
+    var dup = rows.filter(function (x) { return L.vkey(x) === r.id && (!editing || x.id !== editing.id); })[0];
+    var dupTxt = dup ? " — <b>but you already added this video</b> (“" + esc(dup.title) + "”)." : "";
+    if (r.source === "drive") {
+      prev.hidden = true; drivePreview(r.id);
+      setHelp(msg, "Google Drive video found ✓" + dupTxt + " Check the sharing reminder next to the preview.", dup ? "lx-warn" : "lx-good");
+      return;
+    }
+    drivePreview(null);
+    setHelp(msg, "YouTube video found ✓" + dupTxt, dup ? "lx-warn" : "lx-good");
     prev.hidden = false;
     var img = $("lxPrevImg");
     img.onerror = function () { if (my === seq) setHelp(msg, "We couldn’t load a picture for this video. Check the link is complete and the video is <b>Unlisted</b> or Public (not Private).", "lx-warn"); };
@@ -115,7 +136,7 @@
     });
   }
 
-  /* ---------- draft kept on this phone (Safari can reload the page while you're in the YouTube app) ---------- */
+  /* ---------- draft kept on this phone (Safari can reload the page while you're in the Drive or YouTube app) ---------- */
   function formData() {
     return { title: $("lxTitle").value, url: $("lxUrl").value, marker: $("lxMarker").value, summary: $("lxSummary").value, refs: $("lxRefs").value,
              editingId: editing ? editing.id : null, at: Date.now() };
@@ -135,7 +156,7 @@
   function clearForm() {
     editing = null; $("lxForm").reset(); fillSelect(""); LS.del(DRAFT);
     $("lxSave").textContent = "Save lesson"; $("lxCancel").hidden = true; $("lxH").textContent = "Add a lesson";
-    $("lxPrev").hidden = true; $("lxVerses").innerHTML = ""; urlState = { error: "empty" }; checkUrl(false);
+    $("lxPrev").hidden = true; drivePreview(null); $("lxVerses").innerHTML = ""; urlState = { error: "empty" }; checkUrl(false);
   }
   function setEditing(r, quiet) {
     editing = r;
@@ -149,6 +170,7 @@
   /* ---------- save ---------- */
   function errText(e) {
     var m = String((e && (e.message || e.details || e.hint)) || (e && typeof e === "object" ? JSON.stringify(e) : e) || ""), code = String(e && e.code || "");
+    if (L.isMissingColumn && L.isMissingColumn(e)) return "Google Drive videos need one more setup step in Supabase first: Ben needs to run migrations/2026-10-04_drive_resources.sql. Nothing was saved — what you typed is kept on this phone. (YouTube links already work.)";
     if (L.isMissingTable(e)) return "The lessons list isn’t switched on yet: Ben needs to run one setup step in Supabase (migrations/2026-10-04_lessons.sql). Nothing was saved — what you typed is kept on this phone.";
     if (code === "42501" || /row-level security|permission denied/i.test(m)) return "Only group leaders can do this, and the database doesn’t list this email as one. Nothing was saved.";
     if (/AD30_NOT_SAVED/.test(m)) return "That didn’t save — the lesson may have been deleted. Reload the page and try again.";
@@ -160,12 +182,15 @@
     ev.preventDefault();
     var msg = $("lxMsg"), title = $("lxTitle").value.trim(), url = $("lxUrl").value.trim(), btn = $("lxSave");
     if (!title) { say(msg, "Please type a title.", "err"); $("lxTitle").focus(); return; }
-    var y = L.parseYouTube(url);
-    if (y.error) { checkUrl(true); say(msg, y.error === "empty" ? "Please paste the YouTube link." : "Please check the YouTube link (see the note under it).", "err"); $("lxUrl").focus(); return; }
-    var dup = rows.filter(function (x) { return x.youtube_id === y.id && (!editing || x.id !== editing.id); })[0];
+    var y = L.parseVideo(url);
+    if (y.error) { checkUrl(true); say(msg, y.error === "empty" ? "Please paste the video link." : "Please check the video link (see the note under it).", "err"); $("lxUrl").focus(); return; }
+    var dup = rows.filter(function (x) { return L.vkey(x) === y.id && (!editing || x.id !== editing.id); })[0];
     if (dup && !confirm("This video is already on the site as “" + dup.title + "”. Add it again anyway? (Members only see it once.)")) return;
-    var row = { title: title.slice(0, 200), youtube_url: url.slice(0, 500), youtube_id: y.id, marker_id: $("lxMarker").value || null,
+    // youtube_url keeps its old name but now holds any video link; the database works out youtube_id / drive_id from it too.
+    var row = { title: title.slice(0, 200), youtube_url: url.slice(0, 500), youtube_id: y.source === "youtube" ? y.id : null, marker_id: $("lxMarker").value || null,
                 summary: $("lxSummary").value.trim() || null, verse_refs: $("lxRefs").value.trim() || null };
+    if (y.source === "drive") { row.video_source = "drive"; row.drive_id = y.id; }
+    else if (editing && L.src(editing) === "drive") { row.video_source = "youtube"; row.drive_id = null; }
     if (row.marker_id && !L.validMarker(row.marker_id)) row.marker_id = null;
     btn.disabled = true; btn.textContent = "Saving…"; say(msg, "");
     var wasEditing = editing;
@@ -199,15 +224,15 @@
     var ul = $("lxItems"); ul.innerHTML = "";
     if (!rows.length) { if (!missing) ul.innerHTML = '<li class="lx-empty">No lessons yet — add the first one above.</li>'; return; }
     rows.forEach(function (r) {
-      var li = document.createElement("li"), ok = L.validId(r.youtube_id);
+      var li = document.createElement("li"), key = L.vkey(r), ok = !!key, src = L.src(r);
       li.className = "lx-item" + (r.published ? "" : " hidden-l");
-      li.innerHTML = '<div class="lx-item-top">' + (ok ? '<span class="lx-thumb"><img alt="" loading="lazy" src="' + esc(L.thumb(r.youtube_id)) + '"></span>' : "") +
+      li.innerHTML = '<div class="lx-item-top">' + (ok ? '<span class="lx-thumb"><img alt="" loading="lazy"' + L.thumbAttrs(r) + '></span>' : "") +
         '<div><p class="lx-item-t">' + esc(r.title) + "</p>" +
-        '<p class="lx-item-m">' + esc(where(r.marker_id)) + "</p>" +
+        '<p class="lx-item-m">' + (src === "drive" ? "Google Drive video · " : src === "youtube" ? "YouTube video · " : "") + esc(where(r.marker_id)) + "</p>" +
         '<p class="lx-item-m">Added ' + esc(L.dateLabel(r.created_at)) + (r.created_by ? " by " + esc(r.created_by) : "") + (r.verse_refs ? " · " + esc(r.verse_refs) : "") + "</p>" +
         '<span class="lx-state ' + (r.published ? "on" : "off") + '">' + (r.published ? "Showing on the site" : "Hidden from members") + "</span>" +
         (ok ? "" : '<p class="lx-warn">This link has no playable video — tap Edit and paste the link again.</p>') +
-        (r.published && ok ? '<br><a class="lx-view" href="./#v-' + esc(r.youtube_id) + '">View on the site →</a>' : "") + "</div></div>" +
+        (r.published && ok ? '<br><a class="lx-view" href="./#v-' + esc(key) + '">View on the site →</a>' : "") + "</div></div>" +
         '<div class="lx-acts"><button type="button" data-a="edit">Edit</button><button type="button" data-a="vis">' + (r.published ? "Hide" : "Show") + '</button><button type="button" class="del" data-a="del">Delete</button></div>';
       li.querySelector('[data-a="edit"]').addEventListener("click", function () { setEditing(r); });
       li.querySelector('[data-a="vis"]').addEventListener("click", function (e) {
@@ -220,7 +245,7 @@
         });
       });
       li.querySelector('[data-a="del"]').addEventListener("click", function (e) {
-        if (!confirm("Delete “" + r.title + "” from the site?\n\nThis can’t be undone. (The video stays on YouTube.)")) return;
+        if (!confirm("Delete “" + r.title + "” from the site?\n\nThis can’t be undone. (The video itself stays in Google Drive or on YouTube.)")) return;
         var b = e.currentTarget; b.disabled = true;
         L.remove(r.id).then(function (res) {
           b.disabled = false;
@@ -239,7 +264,7 @@
     if (started || !$("lxAdmin")) return; started = true;
     $("lxAdmin").hidden = false;
     fillSelect("");
-    readMarkers().then(function () { fillSelect(); });
+    A.markersP = readMarkers().then(function () { fillSelect(); });   // [drive-resources] the resource card waits for the same list
     var lazyUrl = debounce(function () { checkUrl(false); }, 350), lazyRefs = debounce(checkRefs, 450);
     $("lxUrl").addEventListener("input", function () { lazyUrl(); saveDraft(); });
     $("lxUrl").addEventListener("paste", function () { setTimeout(function () { checkUrl(true); saveDraft(); }, 30); });

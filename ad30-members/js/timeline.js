@@ -180,6 +180,7 @@
       clearInterval(fig._poll);
       if (fig._p && fig._p.pauseVideo) try { fig._p.pauseVideo(); } catch (_) {}
     });
+    if (window.AD30L && window.AD30L.stopDrive) try { window.AD30L.stopDrive(li); } catch (_) {}   // [drive-resources] Google Drive lesson videos
   }
 
   /* ================= Sheet videos -> timeline markers ================= */

@@ -52,7 +52,7 @@
     return x - y || String(a.created_at).localeCompare(String(b.created_at));
   }
   function lessonsFor(secId) { return (ROWS || []).filter(function (r) { return L.sectionFor(r.marker_id) === secId; }).sort(byOrder); }
-  function rowById(id) { var hit = null; (ROWS || []).forEach(function (r) { if (r.youtube_id === id) hit = r; }); return hit; }
+  function rowById(id) { var hit = null; (ROWS || []).forEach(function (r) { if (L.vkey(r) === id) hit = r; }); return hit; }
   function secTitle(id) { var i = secIndex(id); return i >= 0 ? sections()[i].title : ""; }
 
   /* ---------- KJV verses (exact, from kjv/NN.json via AD30L.resolveRefs), cached per reference text ---------- */
@@ -91,7 +91,7 @@
   // placement notes), and the lesson already sits inside its section.
   function whereLine(row) { return "Added " + L.dateLabel(row.created_at); }
   function lessonBlock(row, prefix) {
-    var id = row.youtube_id, el = document.createElement("article");
+    var id = L.vkey(row), el = document.createElement("article");
     el.className = "lxm-l"; el.id = prefix + id; el.setAttribute("data-lx", id);
     var sum = L.summaryHTML(row.summary);
     el.innerHTML =
@@ -99,7 +99,7 @@
       '<h3 class="lxm-t serif">' + esc(row.title) + "</h3>" +
       '<p class="lxm-d">' + esc(whereLine(row)) + "</p>" +
       '<div class="lx-media lxm-media"><button type="button" class="lx-thumb" aria-label="Play video: ' + esc(row.title) + '">' +
-        '<img alt="" loading="lazy" decoding="async" src="' + esc(L.thumb(id)) + '"><span class="lx-play" aria-hidden="true"></span></button></div>' +
+        '<img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>' +
       (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the group leader — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
       versesBox(row.verse_refs, false);
     el.querySelector(".lx-thumb").addEventListener("click", function () {
@@ -119,7 +119,7 @@
   function injectPanel(s, el) {
     if (!el || s.extra || el.querySelector(".lxm")) return;
     var box = sectionBox(s.id); if (!box) return;
-    var before = el.querySelector(".sx-notes");
+    var before = el.querySelector(".rsm") || el.querySelector(".sx-notes");   // [drive-resources] lessons go above the section's resources
     if (before) el.insertBefore(box, before); else el.appendChild(box);
   }
 
@@ -142,10 +142,10 @@
 
   /* ---------- "Latest lessons" at the top ---------- */
   function latestRow(row) {
-    var id = row.youtube_id, secId = L.sectionFor(row.marker_id), li = document.createElement("li");
+    var id = L.vkey(row), secId = L.sectionFor(row.marker_id), li = document.createElement("li");
     li.className = "lxm-item" + (secId ? "" : " lxm-gen"); li.id = "lxs-" + id;
     li.innerHTML = '<button type="button" class="lxm-row" aria-expanded="false">' +
-      '<span class="lx-thumb lxm-sthumb"><img alt="" loading="lazy" decoding="async" src="' + esc(L.thumb(id)) + '"><span class="lx-play" aria-hidden="true"></span></span>' +
+      '<span class="lx-thumb lxm-sthumb"><img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></span>' +
       '<span class="lxm-rt">' + (L.isNew(row) ? '<span class="lx-new">NEW</span> ' : "") + '<span class="lxm-rtt">' + esc(row.title) + "</span>" +
       '<span class="lxm-rw">' + (secId ? "In “" + esc(secTitle(secId).replace(/^[“"]|[”"]$/g, "")) + "”" : "General lesson") + " · " + esc(L.dateLabel(row.created_at)) + "</span></span></button>";
     var btn = li.querySelector(".lxm-row");
@@ -187,15 +187,29 @@
     if (window.__simple.openIdx() !== k) window.__simple.open(k, { instant: true, noScroll: true });
     var li = $("s-" + secId), inner = li && li.querySelector(".sx-in");
     if (inner) injectPanel(sections()[k], inner);
-    flash($("lxm-" + row.youtube_id));
+    flash($("lxm-" + L.vkey(row)));
     return true;
   }
 
   /* ---------- hooks used by js/simple.js ---------- */
+  // [drive-resources] the leaders' PDFs / pictures / links (js/resources.js, window.AD30R.member) ride on the same hooks.
+  function R() { return window.AD30R && window.AD30R.member; }
+  function rnotes(s) { try { return (R() && R().notes(s)) || ""; } catch (e) { return ""; } }
   window.AD30_SIMPLE_EXT = {
-    panel: function (s, el) { if (ROWS) injectPanel(s, el); },
-    afterRender: decorate,
-    notes: function (s) {
+    panel: function (s, el) {
+      if (ROWS) injectPanel(s, el);
+      if (R()) try { R().panel(s, el); } catch (e) { if (window.console) console.warn("[resources]", e); }
+    },
+    afterRender: function () { decorate(); if (R()) try { R().decorate(); } catch (e) {} },
+    notes: function (s) { return lessonNotes(s) + rnotes(s); },
+    pause: function (scope, except) {
+      [].forEach.call((scope || document).querySelectorAll(".lxm-media, .lxm-gpanel .lx-media"), function (h) {
+        var p = h._lxPlayer; if (p && p !== except && p.pauseVideo) try { p.pauseVideo(); } catch (e) {}
+      });
+      if (L.stopDrive) L.stopDrive(scope || document);   // [drive-resources] Google Drive videos: back to the picture
+    }
+  };
+  function lessonNotes(s) {
       if (s.extra) return "";
       var rows = lessonsFor(s.id); if (!rows.length) return "";
       var h = '<section class="lxn"><h2 class="nt-th">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + '</h2><p class="nt-note">From the group leaders — teaching, not Scripture. Verses are KJV.</p>';
@@ -207,13 +221,7 @@
       });
       setTimeout(function () { [].forEach.call(document.querySelectorAll(".lxn-verses[data-refs]"), fillVerses); }, 0);
       return h + "</section>";
-    },
-    pause: function (scope, except) {
-      [].forEach.call((scope || document).querySelectorAll(".lxm-media, .lxm-gpanel .lx-media"), function (h) {
-        var p = h._lxPlayer; if (p && p !== except && p.pauseVideo) try { p.pauseVideo(); } catch (e) {}
-      });
-    }
-  };
+  }
 
   // "Latest lessons" arrives a moment after the page shows and sits ABOVE the sections. If a section is already open
   // (e.g. simple.html#tabernacles) or the member has scrolled, keep what they are looking at in the same place on screen
@@ -231,6 +239,7 @@
 
   // AD30L.simple(): called by simple.js once the signed-in page shows. Never rejects; any failure = nothing shown.
   L.simple = function () {
+    if (R()) try { R().load(); } catch (e) { if (window.console) console.warn("[resources]", e); }   // [drive-resources] in parallel
     return L.fetch().then(function (res) {
       try {
         ROWS = L.usable(res.rows);
@@ -243,14 +252,14 @@
       return res;
     });
   };
-  // AD30L.openSimple(hash): #v-<youtube id> (lesson link) or a timeline marker id simple-data doesn't know (e.g. #pass27).
+  // AD30L.openSimple(hash): #v-<video id: YouTube or Google Drive> (lesson link) or a timeline marker id simple-data doesn't know (e.g. #pass27).
   L.openSimple = function (want) {
     want = String(want || "");
-    if (/^v-[A-Za-z0-9_-]{11}$/.test(want)) {
+    if (/^v-[A-Za-z0-9_-]{11,100}$/.test(want)) {
       var row = rowById(want.slice(2)); if (!row) return false;
       var secId = L.sectionFor(row.marker_id);
       if (secId) return openInSection(row, secId);
-      var li = $("lxs-" + row.youtube_id); if (!li) return false;
+      var li = $("lxs-" + L.vkey(row)); if (!li) return false;
       li.hidden = false; toggleGeneral(li, row, true); flash(li); return true;
     }
     var s = L.sectionFor(want), k = s ? secIndex(s) : -1;

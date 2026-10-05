@@ -256,6 +256,67 @@
     return L.validId(id) ? "https://www.youtube-nocookie.com/embed/" + id + "?playsinline=1&rel=0&modestbranding=1" + (autoplay ? "&autoplay=1" : "") : "";
   };
 
+  /* ===================== Google Drive videos [drive-resources] ===================== */
+  // Drive file ids are 25-44 characters today; accept 20-100 of the same characters (never 11, so they can't be
+  // mistaken for a YouTube id). The database checks the same pattern (migrations/2026-10-04_drive_resources.sql).
+  var DRIVE_RE = /^[A-Za-z0-9_-]{20,100}$/;
+  L.validDrive = function (id) { return typeof id === "string" && DRIVE_RE.test(id); };
+  L.validKey = function (k) { return L.validId(k) || L.validDrive(k); };
+  function toUrl(input) {
+    var s = String(input || "").trim().replace(/^<|>$/g, "");
+    if (!s) return { error: "empty" };
+    var found = s.match(/https?:\/\/\S+/i); if (found) s = found[0];          // pasted text with a link inside it
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = "https://" + s;
+    var u; try { u = new URL(s); } catch (e) { return { error: "notlink" }; }
+    if (!/^https?:$/.test(u.protocol) || !/\./.test(u.hostname)) return { error: "notlink" };
+    return { u: u };
+  }
+  function isDriveHost(h) { return /^(drive|docs|drive\.usercontent)\.google\.com$/.test(String(h).toLowerCase().replace(/^www\./, "")); }
+  // drive.google.com/file/d/ID/view (also /preview, /edit, no ending, ?usp=sharing, &resourcekey=...),
+  // drive.google.com/open?id=ID, drive.google.com/uc?id=ID&export=download, drive.usercontent.google.com/download?id=ID,
+  // docs.google.com/file/d/ID, the /u/0/ and /a/<domain>/ forms. Returns { id } or { error: "folder" | "gdoc" | "noid" }.
+  L.parseDrive = function (u) {
+    var seg = u.pathname.split("/").filter(Boolean), id = null;
+    if (seg[0] === "a" && seg.length > 2) seg = seg.slice(2);                // Workspace: /a/<domain>/...
+    if (seg[0] === "u" && /^\d+$/.test(seg[1] || "")) seg = seg.slice(2);    // signed into several accounts: /u/1/...
+    if (seg.indexOf("folders") >= 0 || seg[0] === "embeddedfolderview") return { error: "folder" };
+    if (/^(document|spreadsheets|presentation|forms|drawings)$/.test(seg[0] || "")) return { error: "gdoc" };
+    if (seg[0] === "file" && seg[1] === "d") id = seg[2];
+    else if (/^(open|uc|download|thumbnail)$/.test(seg[0] || "") && seg.length === 1) id = u.searchParams.get("id");
+    return L.validDrive(id) ? { id: id } : { error: "noid" };
+  };
+  // Any video link the leaders may paste: a Google Drive video, or a YouTube video (kept working).
+  // Returns { source: "drive" | "youtube", id } or { error: "empty" | "notlink" | "notvideo" | "playlist" | "folder" | "gdoc" | "noid" }.
+  L.parseVideo = function (input) {
+    var t = toUrl(input); if (t.error) return t;
+    if (isDriveHost(t.u.hostname)) { var d = L.parseDrive(t.u); return d.error ? d : { source: "drive", id: d.id }; }
+    var y = L.parseYouTube(t.u.href);
+    if (y.error) return { error: y.error === "notyoutube" ? "notvideo" : y.error };
+    return { source: "youtube", id: y.id };
+  };
+  L.driveEmbed = function (id) { return L.validDrive(id) ? "https://drive.google.com/file/d/" + id + "/preview" : ""; };
+  L.driveThumb = function (id) { return L.validDrive(id) ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w640" : ""; };
+  // A lesson row's video: "drive" | "youtube" | null. Rows from before the Drive columns existed are YouTube rows.
+  L.src = function (row) {
+    if (!row) return null;
+    if (row.video_source === "drive" || (!L.validId(row.youtube_id) && row.drive_id)) return L.validDrive(row.drive_id) ? "drive" : null;
+    if (L.validId(row.youtube_id)) return "youtube";
+    if (row.drive_id === undefined && row.youtube_url) {                       // database not updated yet: read the link itself
+      var v = L.parseVideo(row.youtube_url);
+      if (v.source === "drive") { row.drive_id = v.id; row.video_source = "drive"; return "drive"; }
+    }
+    return null;
+  };
+  L.vkey = function (row) { var s = L.src(row); return s === "drive" ? row.drive_id : s === "youtube" ? row.youtube_id : null; };
+  L.thumbFor = function (row) { var s = L.src(row); return s === "drive" ? L.driveThumb(row.drive_id) : s === "youtube" ? L.thumb(row.youtube_id) : ""; };
+  // <img> attributes for a lesson picture. Drive only has a picture once it has processed the video (and only when
+  // the file is shared "Anyone with the link"): if it fails, a plain dark tile with the play button is shown instead.
+  L.thumbAttrs = function (row) { return ' src="' + esc(L.thumbFor(row)) + '"' + (L.src(row) === "drive" ? ' data-lxfb="1" referrerpolicy="no-referrer"' : ""); };
+  document.addEventListener("error", function (e) {
+    var t = e.target;
+    if (t && t.tagName === "IMG" && t.getAttribute("data-lxfb") === "1" && !t._lxfb) { t._lxfb = 1; t.style.visibility = "hidden"; if (t.parentNode && t.parentNode.classList) t.parentNode.classList.add("lx-nothumb"); }
+  }, true);
+
   /* ===================== Bible references + checked KJV ===================== */
   var BOOKS = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings",
     "1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah",
@@ -389,11 +450,20 @@
   L.dateLabel = function (ts) { var d = new Date(ts); return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); };
 
   /* ===================== data ===================== */
-  var COLS = "id,created_at,updated_at,created_by,title,youtube_url,youtube_id,marker_id,summary,verse_refs,sort_order,published,notified";
+  var COLS_OLD = "id,created_at,updated_at,created_by,title,youtube_url,youtube_id,marker_id,summary,verse_refs,sort_order,published,notified";
+  // [drive-resources] "*" = the columns above + video_source, drive_id once the Drive migration has run (every column of
+  // public.lessons is fine for members to read). Before that migration the same request still works (no new columns:
+  // YouTube lessons keep working, and saving a Drive link explains what's needed). The old list stays as a fallback.
+  var COLS = "*";
+  L.isMissingColumn = function (err) {
+    var m = String((err && (err.message || err.details || err.hint)) || "") + " " + String(err && err.code || "");
+    return /PGRST204|42703/.test(m) || /column .*(video_source|drive_id)|(video_source|drive_id).* column/i.test(m);
+  };
   var DEMO_KEY = "ad30m.demoLessons", CACHE_KEY = "ad30m.lessons";
   function lsGet(k, d) { return AD30.LS ? AD30.LS.get(k, d) : d; }
   function lsSet(k, v) { if (AD30.LS) AD30.LS.set(k, v); }
   L.isMissingTable = function (err) {
+    if (L.isMissingColumn(err)) return false;
     var m = String((err && (err.message || err.details || err.hint)) || "") + " " + String(err && err.code || "");
     return /PGRST205|42P01|schema cache|does not exist|relation .*lessons/i.test(m);
   };
@@ -409,10 +479,15 @@
     opts = opts || {};
     if (AD30.demo) return Promise.resolve({ rows: lsGet(DEMO_KEY, []).filter(function (r) { return opts.all || r.published; }) });
     if (!AD30.sb) return Promise.resolve({ rows: [], error: "not connected" });
-    var q = AD30.sb.from("lessons").select(COLS);
-    if (!opts.all) q = q.eq("published", true);
-    q = q.order("created_at", { ascending: false }).limit(300);
-    return timeout(q, opts.ms || 9000).then(function (r) {
+    function query() {
+      var q = AD30.sb.from("lessons").select(COLS);
+      if (!opts.all) q = q.eq("published", true);
+      return timeout(q.order("created_at", { ascending: false }).limit(300), opts.ms || 9000);
+    }
+    return query().then(function (r) {
+      if (r.error && COLS !== COLS_OLD && L.isMissingColumn(r.error)) { COLS = COLS_OLD; L.driveReady = false; return query(); }
+      return r;
+    }).then(function (r) {
       if (r.error) throw r.status === 404 ? MISSING : r.error;
       var rows = (r.data || []).filter(function (x) { return x && (opts.all || x.published !== false); });
       if (!opts.all) lsSet(CACHE_KEY, { rows: rows, at: Date.now() });
@@ -451,8 +526,9 @@
   L.usable = function (rows) {
     var seen = {};
     return (rows || []).filter(function (r) {
-      if (!r || !L.validId(r.youtube_id) || !String(r.title || "").trim() || seen[r.youtube_id]) return false;
-      seen[r.youtube_id] = 1; return true;
+      var k = L.vkey(r);
+      if (!k || !String(r.title || "").trim() || seen[k]) return false;
+      seen[k] = 1; return true;
     });
   };
   function byOrder(a, b) {
@@ -492,22 +568,27 @@
   L.timeline = function (tl) {
     return L.fetch().then(function (res) {
       try { renderTimeline(tl || {}, L.usable(res.rows)); } catch (e) { if (window.console) console.warn("[lessons]", e); }
+      // [drive-resources] PDFs, pictures and links from the leaders (js/resources.js), placed after the lessons
+      if (window.AD30R && window.AD30R.timeline) try { window.AD30R.timeline(tl || {}); } catch (e) { if (window.console) console.warn("[resources]", e); }
       return res;
     });
   };
   function lessonFigure(row) {
-    var id = row.youtube_id, fig = document.createElement("figure");
-    fig.className = "vid sheetvid lx-fig"; fig.id = "sv-" + id;
-    fig.setAttribute("data-key", id); fig.setAttribute("data-yt", id); fig.setAttribute("data-title", String(row.title).slice(0, 200));
+    var id = L.vkey(row), drive = L.src(row) === "drive", fig = document.createElement("figure");
+    fig.className = "vid sheetvid lx-fig" + (drive ? " lx-dfig" : ""); fig.id = "sv-" + id;
+    fig.setAttribute("data-key", id); fig.setAttribute(drive ? "data-drive" : "data-yt", id); fig.setAttribute("data-title", String(row.title).slice(0, 200));
     fig.innerHTML = '<figcaption><span class="hasv">▶ WATCH</span><span class="tag kL">VIDEO LESSON</span>' + (L.isNew(row) ? '<span class="lx-new">NEW</span> ' : "") +
-      esc(row.title) + "</figcaption>" + '<div class="ytbox"><div></div></div>' + summaryBlock(row) + versesPlaceholder(row.verse_refs);
+      esc(row.title) + "</figcaption>" +
+      (drive ? '<div class="ytbox lx-dbox"><button type="button" class="lx-thumb lx-dposter" aria-label="Play video: ' + esc(row.title) + '"><img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>'
+             : '<div class="ytbox"><div></div></div>') + summaryBlock(row) + versesPlaceholder(row.verse_refs);
+    if (drive) fig.querySelector(".lx-dposter").addEventListener("click", function () { L.player(fig.querySelector(".lx-dbox"), row); });
     return fig;
   }
   function renderTimeline(tl, rows) {
     var top = document.getElementById("lxTop"); if (!top || !rows.length) return;
     var gen = document.getElementById("lxGeneral"), placed = [];
     rows.slice().sort(byOrder).forEach(function (row) {
-      var id = row.youtube_id;
+      var id = L.vkey(row);
       if (document.getElementById("sv-" + id) || document.querySelector('.vid[data-key="' + id + '"]')) return;   // already on the page
       var li = L.validMarker(row.marker_id) ? document.getElementById(row.marker_id) : null, fig = lessonFigure(row);
       if (!li || !li.classList.contains("ev") || li.classList.contains("sv") || li.classList.contains("lx-gen")) {
@@ -533,13 +614,14 @@
     var strip = document.getElementById("lxStrip");
     placed.slice().sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); }).slice(0, 12).forEach(function (row) {
       var a = document.createElement("a");
-      a.className = "lx-card"; a.href = "#v-" + row.youtube_id; a.setAttribute("data-lx", row.youtube_id); a.setAttribute("role", "listitem");
-      a.innerHTML = '<span class="lx-thumb"><img alt="" loading="lazy" decoding="async" src="' + esc(L.thumb(row.youtube_id)) + '"><span class="lx-play" aria-hidden="true"></span>' +
+      var key = L.vkey(row);
+      a.className = "lx-card"; a.href = "#v-" + key; a.setAttribute("data-lx", key); a.setAttribute("role", "listitem");
+      a.innerHTML = '<span class="lx-thumb"><img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span>' +
         (L.isNew(row) ? '<span class="lx-new">NEW</span>' : "") + '</span><span class="lx-ct">' + esc(row.title) + '</span><span class="lx-cw">' + esc(row._where) + "</span>";
       a.addEventListener("click", function (ev) {
         ev.preventDefault();
-        if (tl.openTarget) tl.openTarget("v-" + row.youtube_id);
-        if (AD30.track) AD30.track("card_open", { marker_id: "lesson-strip", video_id: row.youtube_id, video_title: String(row.title).slice(0, 200) });
+        if (tl.openTarget) tl.openTarget("v-" + key);
+        if (AD30.track) AD30.track("card_open", { marker_id: "lesson-strip", video_id: key, video_title: String(row.title).slice(0, 200) });
       });
       strip.appendChild(a);
     });
@@ -574,17 +656,19 @@
   var sentMs = {};
   function track(kind, row, extra) {
     if (!AD30.track) return;
-    var f = { marker_id: row.marker_id || "lessons", video_id: row.youtube_id, video_title: String(row.title).slice(0, 200) };
+    var f = { marker_id: row.marker_id || "lessons", video_id: L.vkey(row), video_title: String(row.title).slice(0, 200) };
     if (extra) Object.keys(extra).forEach(function (k) { f[k] = extra[k]; });
     AD30.track(kind, f);
   }
   var players = [];
   function pauseOthers(me) {
     players.forEach(function (p) { if (p !== me && p.pauseVideo) try { p.pauseVideo(); } catch (e) {} });
+    if (me) L.stopDrive(document);
     [].forEach.call(document.querySelectorAll("video"), function (v) { try { v.pause(); } catch (e) {} });
   }
   // Puts a player into holder (replacing its content). Tracks play / 25 / 50 / 75 / complete like the other videos.
   L.player = function (holder, row) {
+    if (L.src(row) === "drive") return drivePlayer(holder, row);
     var id = row.youtube_id; if (!L.validId(id)) return;
     var s = sentMs[id] || (sentMs[id] = { m: {}, done: false, played: false });
     holder.innerHTML = '<div class="lx-yt"><div></div></div>';
@@ -619,6 +703,35 @@
     });
   };
 
+  /* ===================== Google Drive player [drive-resources] ===================== */
+  // Drive's own player in an iframe (https://drive.google.com/file/d/<ID>/preview), 16:9, full screen allowed. It
+  // replaces the picture when tapped (so a page with many lessons doesn't load many players). Drive doesn't tell the
+  // page about play / progress, so only the tap is counted (as video_play).
+  function drivePlayer(holder, row) {
+    var id = row.drive_id; if (!L.validDrive(id) || !holder) return;
+    L.stopDrive(document);
+    pauseOthers(null);
+    if (!holder._lxKeep) holder._lxKeep = [].slice.call(holder.childNodes);
+    holder.innerHTML = "";
+    var box = document.createElement("div"), f = document.createElement("iframe");
+    box.className = "lx-yt lx-drive";
+    f.src = L.driveEmbed(id); f.title = String(row.title || "Video");
+    f.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+    f.setAttribute("allowfullscreen", ""); f.setAttribute("data-lxdrive", id);
+    box.appendChild(f); holder.appendChild(box);
+    var s = sentMs[id] || (sentMs[id] = { m: {}, done: false, played: false });
+    if (!s.played) { s.played = true; track("video_play", row, { source: "drive" }); }
+  }
+  // Put the picture back (stops a Drive video that is playing) - used when a section/marker closes or another video starts.
+  L.stopDrive = function (root, except) {
+    [].forEach.call((root || document).querySelectorAll("iframe[data-lxdrive]"), function (f) {
+      if (f === except) return;
+      var box = f.parentNode, h = box && box.parentNode;
+      if (h && h._lxKeep) { h.innerHTML = ""; h._lxKeep.forEach(function (n) { h.appendChild(n); }); h._lxKeep = null; }
+      else if (box) box.parentNode && box.parentNode.removeChild(box);
+    });
+  };
+
   /* ===================== simple view (simple.html): big lesson cards ===================== */
   L.simple = function () {
     return L.fetch().then(function (res) {
@@ -630,11 +743,11 @@
     var sec = document.getElementById("lxSimple"), list = document.getElementById("lxList"); if (!sec || !list || !rows.length) return;
     list.innerHTML = "";
     rows.forEach(function (row) {      // newest first
-      var id = row.youtube_id, m = L.validMarker(row.marker_id) ? L.marker(row.marker_id) : null;
+      var id = L.vkey(row), m = L.validMarker(row.marker_id) ? L.marker(row.marker_id) : null;
       var li = document.createElement("li"); li.className = "lx-sc"; li.id = "lxs-" + id;
       var more = summaryBlock(row, true) + (row.verse_refs ? '<p class="lx-k">What Scripture says (KJV, exact)</p>' + versesPlaceholder(row.verse_refs) : "");
       li.innerHTML = '<div class="lx-media"><button type="button" class="lx-thumb" aria-label="Play video: ' + esc(row.title) + '">' +
-        '<img alt="" loading="lazy" decoding="async" src="' + esc(L.thumb(id)) + '"><span class="lx-play" aria-hidden="true"></span></button></div>' +
+        '<img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>' +
         '<h3 class="lx-sc-t serif">' + esc(row.title) + (L.isNew(row) ? ' <span class="lx-new">NEW</span>' : "") + "</h3>" +
         '<p class="lx-sc-d">Added ' + esc(L.dateLabel(row.created_at)) + (m ? " · On the timeline: " + esc(L.markerLabel(m)) : "") + "</p>" +
         (more ? '<button type="button" class="lx-more-btn" aria-expanded="false" aria-controls="lxs-m-' + id + '">Show the summary and verses</button>' +
@@ -657,7 +770,7 @@
   }
   // simple view deep link (#v-<id> from a future email): scroll to the lesson card
   L.openSimple = function (want) {
-    var id = String(want || "").replace(/^v-/, ""); if (!L.validId(id)) return false;
+    var id = String(want || "").replace(/^v-/, ""); if (!L.validKey(id)) return false;
     var li = document.getElementById("lxs-" + id); if (!li) return false;
     setTimeout(function () { li.scrollIntoView({ block: "start", behavior: "smooth" }); li.classList.add("lx-flash"); }, 60);
     return true;
