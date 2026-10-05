@@ -124,3 +124,19 @@ html.fx-dark #lxTop .lx-ct{color:#f1e7d6}
 html.fx-dark #lxTop .lx-cw{color:#b9b2a6}
 html.fx-dark .lx-fig{background:#1b1e24; border-color:#343a44; border-left-color:#8c97a6}
 html.fx-dark .lx-fig .lx-sum{background:#232830; border-left-color:#8c97a6}
+
+/* ---------- [drive-resources] Google Drive lesson videos ---------- */
+.lx-thumb.lx-nothumb{background:radial-gradient(circle at 50% 45%,#3a4250 0,#1a1e25 70%)}
+.lx-dbox > button.lx-dposter{position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; border:0; padding:0; margin:0; cursor:pointer; border-radius:0;
+  -webkit-tap-highlight-color:transparent}
+.lx-dbox > .lx-yt{position:absolute; inset:0; border-radius:0}
+.lx-admin .lx-also{margin-top:2px; font-size:14px}
+.lx-admin .lx-dprev{margin:14px 0 0}
+.lx-admin .lx-dprev .lx-yt{border-radius:12px; border:1px solid var(--line,#2a303a)}
+.lx-admin .lx-share{margin:12px 0 0; padding:12px 14px; border:2px solid #e0a33a; border-radius:14px; background:rgba(224,163,58,.12); color:var(--text,#ece8df); font-size:16px; line-height:1.45}
+.lx-admin .lx-share p{margin:8px 0 0}
+.lx-admin .lx-share p.lx-share-h{margin:0; font-size:17px; font-weight:700; color:#f3c46b}
+@media (min-width:900px){
+  .lx-admin .lx-dprev{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:14px; align-items:start}
+  .lx-admin .lx-dprev .lx-share{margin:0}
+}
