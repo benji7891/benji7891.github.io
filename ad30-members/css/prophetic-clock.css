@@ -1,0 +1,103 @@
+/* AD30 members - God's Time Clock, OPTION A: antique face (member view, simple.html).   [clock-panel, new file]
+   gtc-* = the panel built by js/prophetic-clock.js. Only adds new class names, so nothing else on the site changes.
+   Page layout (columns / sticky / phone bars) and the shared bits (caption, verses, links) are in css/gtc-layout.css. */
+
+/* ---------- the panel ---------- */
+.gtc{--gtc-bg:#17130e; --gtc-bg2:#100d09; --gtc-line:rgba(217,184,112,.28); --gtc-cream:#efe4c8;
+  border:1px solid var(--gtc-line); border-radius:18px; color:var(--text, #ece8df);
+  background:radial-gradient(120% 60% at 50% 0%, #241c12 0%, var(--gtc-bg) 55%, var(--gtc-bg2) 100%);
+  box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden}
+.gtc[hidden]{display:none}
+
+/* header: phones = tap bar, wide = title */
+.gtc-head{width:100%; min-height:56px; padding:10px 12px; background:none; border:0;
+  color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation}
+.gtc-head:focus-visible{outline:3px solid var(--gold, #d9b870); outline-offset:-3px; border-radius:18px}
+.gtc-head{display:block}
+.gtc-hrow{display:flex; align-items:center; gap:6px; min-width:0}
+.gtc-htitle{font-size:18px; line-height:1.2; color:var(--gtc-cream); flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.gtc-hspec{flex:0 0 auto; font:700 10px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  color:#e7b46a; border:1px solid rgba(231,180,106,.5); border-radius:999px; padding:4px 6px; white-space:nowrap}
+.gtc-hnow{flex:0 0 auto; margin-left:auto; font-variant-numeric:tabular-nums; font-size:16px; color:var(--gold, #d9b870); white-space:nowrap}
+.gtc-hnow .gtc-dotkey{margin-right:2px}
+@media (max-width:400px){ .gtc-hnowl{display:none} }
+.gtc-chev{flex:0 0 22px; height:22px; position:relative}
+.gtc-chev::before{content:""; position:absolute; left:6px; top:3px; width:9px; height:9px; border-right:2px solid var(--muted, #9a9fa8);
+  border-bottom:2px solid var(--muted, #9a9fa8); transform:rotate(45deg); transition:transform .25s ease}
+.gtc.open .gtc-chev::before{transform:translate(0,6px) rotate(-135deg); border-color:var(--gold, #d9b870)}
+.gtc-body{display:none; padding:0 16px 16px}
+.gtc.open .gtc-body, .gtc.gtc-wide .gtc-body{display:block}
+.gtc.gtc-wide .gtc-head{cursor:default; min-height:0; padding:16px 16px 8px}
+.gtc.gtc-wide .gtc-chev, .gtc.gtc-wide .gtc-hnow, .gtc.gtc-wide .gtc-hspec, .gtc.open .gtc-hspec{flex:0 0 auto; display:none}  /* the full label shows once open */
+.gtc.gtc-wide .gtc-htitle{font-size:22px}
+
+/* speculation label */
+.gtc-spec{margin:2px 0 12px; padding:8px 10px; border-radius:10px; background:rgba(231,180,106,.10); border:1px solid rgba(231,180,106,.35);
+  font-size:13px; line-height:1.4; color:#e9dcc0}
+.gtc-spec b{color:#f0bf73; letter-spacing:.06em}
+.gtc-spec cite{font-style:normal; color:var(--gold, #d9b870); white-space:nowrap}
+
+/* the face */
+.gtc-face{position:relative; width:100%; max-width:300px; margin:0 auto; aspect-ratio:1/1; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; border-radius:50%}
+.gtc-faceimg, .gtc-hands{position:absolute; inset:0; width:100%; height:100%; display:block}
+.gtc-faceimg{filter:drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.gtc-hands{pointer-events:none; overflow:visible}
+.gtc-hub{position:absolute; left:50%; top:50.25%; width:7.5%; height:7.5%; transform:translate(-50%,-50%); pointer-events:none;
+  filter:drop-shadow(1px 2px 2px rgba(0,0,0,.45))}
+.gtc-nowdot{fill:#ffe19a; stroke:#3b2a12; stroke-width:4; filter:drop-shadow(0 0 6px rgba(255,214,120,.9))}
+@media (prefers-reduced-motion:no-preference){ .gtc-nowdot{animation:gtcPulse 2.4s ease-in-out infinite} }
+@keyframes gtcPulse{50%{opacity:.55}}
+.gtc-hint{margin:10px 0 6px; text-align:center; font-size:14px; color:var(--muted, #9a9fa8)}
+
+/* pickers: always show a real time, large and high-contrast */
+.gtc-pick{display:flex; align-items:center; justify-content:center; gap:6px}
+.gtc-sel{-webkit-appearance:none; appearance:none; min-height:46px; padding:0 34px 0 14px; border-radius:12px;
+  border:1px solid rgba(217,184,112,.6); background:#0e1116 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23d9b870' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color:#f3ead6; font:600 22px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-variant-numeric:tabular-nums; cursor:pointer}
+.gtc-sel option{background:#0e1116; color:#f3ead6}
+.gtc-sel:focus-visible{outline:3px solid var(--gold, #d9b870); outline-offset:2px}
+.gtc-colon{font:600 24px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:var(--gold, #d9b870)}
+
+/* the answer */
+.gtc-date{margin:12px 0 0; text-align:center; line-height:1.35}
+.gtc-dlabel{display:block; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted, #9a9fa8)}
+.gtc-dval{display:block; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; font-weight:600; font-size:22px; color:var(--gtc-cream); margin-top:2px}
+.gtc-dtime{display:block; margin-top:2px; font-size:12px; color:#8d8676; font-variant-numeric:tabular-nums}
+.gtc-now{margin:12px 0 0; padding:9px 10px; border-radius:10px; background:rgba(255,255,255,.035); font-size:14px; line-height:1.45; color:#d6cfbf}
+.gtc-now b{color:var(--gold, #d9b870); font-variant-numeric:tabular-nums}
+
+/* section headings */
+.gtc-h{margin:18px 0 0; font:700 13px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#cdb98a}
+.gtc-sub{margin:2px 0 8px; font-size:13px; line-height:1.4; color:var(--muted, #9a9fa8)}
+
+/* timeline */
+.gtc-tlist{list-style:none; margin:0; padding:0; border-top:1px solid rgba(255,255,255,.06)}
+.gtc-row{width:100%; display:grid; grid-template-columns:54px 1fr auto; align-items:center; gap:8px; min-height:38px; padding:4px 8px;
+  background:none; border:0; border-bottom:1px solid rgba(255,255,255,.06); color:#d9d2c2; font:inherit; font-size:15px; text-align:left; cursor:pointer;
+  font-variant-numeric:tabular-nums; touch-action:manipulation}
+.gtc-row:hover{background:rgba(217,184,112,.07)}
+.gtc-row:focus-visible{outline:2px solid var(--gold, #d9b870); outline-offset:-2px}
+.gtc-row.sel{background:rgba(217,184,112,.16); color:#fff3d6}
+.gtc-rt{color:var(--gold, #d9b870); font-weight:600}
+.gtc-rn{font-size:12px; letter-spacing:.08em; color:#8d8676; text-transform:uppercase}
+.gtc-row.now .gtc-rn{color:#ffe19a}
+.gtc-more{margin-top:4px}
+
+/* teaching */
+.gtc-teach{margin:16px 0 0; border-top:1px solid rgba(255,255,255,.08); padding-top:10px; font-size:15px; line-height:1.55; color:#d6cfbf}
+.gtc-teach summary{cursor:pointer; min-height:36px; display:flex; align-items:center; color:#cdb98a; font-weight:600; font-size:15px}
+.gtc-teach summary:focus-visible{outline:2px solid var(--gold, #d9b870); outline-offset:2px}
+.gtc-teach p{margin:8px 0 0}
+.gtc-tune{margin:14px 0 0; font-size:12px; line-height:1.45; color:#7f796c; text-align:center}
+
+/* events (only when SHOW_GWC_EVENTS is on) */
+.gtc-evlist{list-style:none; margin:0; padding:0}
+.gtc-evi{padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06)}
+.gtc-evt{display:block; font-size:15px; line-height:1.35; color:#f0e6cf}
+.gtc-evd{display:block; font-size:12px; color:#8d8676; font-variant-numeric:tabular-nums}
+.gtc-evp{margin:4px 0 0; font-size:14px; line-height:1.45; color:#cfc8b8}
+.gtc-evs{display:block; margin-top:2px; font-size:13px}
+.gtc-evs a{color:var(--gold, #d9b870)}
+.gtc-evnone{margin:0; font-size:14px; color:var(--muted, #9a9fa8)}
+

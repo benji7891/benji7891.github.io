@@ -1,0 +1,49 @@
+/* AD30 members - God's Time Clock: page layout + bits shared by both clock designs.     [clock-panel, new file]
+   Markup (simple.html):  .gtc-shell > .gtc-rail > aside.gtc-side (A #gtcPanel, B #gtmPanel)  +  #page (the member content)
+   js/gtc-core.js sets .gtc-shell[data-gtc-count] = how many clocks are really on (1 or 2).
+     phones (< 900px)              : each clock is a small bar at the top (A, then B), tap to open; content below
+     900px+ with 1 clock           : one sticky column on the left, content beside it
+     900-1199px with 2 clocks      : both clocks stacked in ONE sticky left column (it scrolls on its own); content beside
+     1200px+ with 2 clocks         : three columns - A left, content centre, B right - both sticky
+                                     (clock columns 290px at 1200, 320px at 1360, 340px at 1440+, so the lessons keep ~520-560px) */
+
+.gtc-shell, .gtc-rail{display:block}
+.gtc-shell .gtc-side{margin:12px 12px 0}
+.gtc-shell .gtc-side[hidden]{display:none}
+
+@media (min-width:900px){
+  .gtc-shell{display:grid; grid-template-columns:minmax(300px,340px) minmax(0,560px); justify-content:center; align-items:start;
+    column-gap:28px; padding:0 20px}
+  .gtc-shell > .wrap{grid-column:2; grid-row:1; margin:0; min-width:0}
+  .gtc-rail{grid-column:1; grid-row:1; position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto;
+    overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#4a3c24 transparent; padding-bottom:4px}
+  .gtc-shell .gtc-side{margin:24px 0 0}
+  .gtc-shell .gtc-side + .gtc-side{margin-top:16px}
+}
+@media (min-width:1200px){
+  .gtc-shell[data-gtc-count="2"]{grid-template-columns:290px minmax(0,560px) 290px; column-gap:24px}
+  .gtc-shell[data-gtc-count="2"] .gtc-rail{display:contents}
+  .gtc-shell[data-gtc-count="2"] .gtc-side{grid-row:1; position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto;
+    overscroll-behavior:contain; scrollbar-width:thin; margin:24px 0 0}
+  .gtc-shell[data-gtc-count="2"] .gtc-side-a{grid-column:1}
+  .gtc-shell[data-gtc-count="2"] .gtc-side-b{grid-column:3; margin-top:24px}
+}
+@media (min-width:1360px){ .gtc-shell[data-gtc-count="2"]{grid-template-columns:320px minmax(0,560px) 320px} }
+@media (min-width:1440px){ .gtc-shell[data-gtc-count="2"]{grid-template-columns:340px minmax(0,560px) 340px; column-gap:28px} }
+
+/* "Option A / Option B" caption (only shown while both designs are on) */
+.gtc-cap{flex:0 0 100%; display:block; font:700 10.5px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  letter-spacing:.12em; text-transform:uppercase; color:#9a9fa8; opacity:.9}
+
+/* shared: verses, "now" dot, small text buttons */
+.gtc-v{margin:10px 0 0; padding:0 0 0 12px; border-left:3px solid #2d5f8a}
+.gtc-v p{margin:0; font-style:italic; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; font-size:16px}
+.gtc-v cite{display:block; margin-top:4px; font-style:normal; font-size:13px; color:var(--gold, #d9b870)}
+.gtc-dotkey{display:inline-block; width:10px; height:10px; border-radius:50%; background:#ffe19a; box-shadow:0 0 6px rgba(255,214,120,.9); vertical-align:0}
+.gtc-link{background:none; border:0; padding:4px 2px; min-height:32px; color:var(--gold, #d9b870); font:inherit; font-size:14px;
+  text-decoration:underline; text-underline-offset:3px; cursor:pointer}
+.gtc-link:focus-visible{outline:2px solid var(--gold, #d9b870); outline-offset:2px}
+
+/* never in print (the Study notes print on their own) */
+@media print{ .gtc-rail, .gtc-side{display:none !important} }
+@media print{ .gtc-shell{display:block !important; padding:0 !important} }
