@@ -9,6 +9,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
 <link rel="stylesheet" href="css/members.css">
 <link rel="stylesheet" href="css/lessons.css">
+<link rel="stylesheet" href="css/resources.css">
 </head>
 <body class="admin">
 
@@ -44,14 +45,25 @@
     <!-- ===== Add a lesson (js/lessons-admin.js; database table public.lessons) ===== -->
     <section class="lx-admin" id="lxAdmin" aria-labelledby="lxH" hidden>
       <h2 class="serif" id="lxH">Add a lesson</h2>
-      <p class="lx-tip">Tip: Upload your HeyGen video to YouTube as <b>Unlisted</b>, then paste the link here.</p>
+      <p class="lx-tip">Tip: Upload your video to <b>Google Drive</b>, set sharing to <b>Anyone with the link</b> (Viewer), then paste the link here.</p>
       <form id="lxForm" novalidate autocomplete="off">
         <label class="lx-l" for="lxTitle">Title</label>
         <input class="field" id="lxTitle" maxlength="200" placeholder="e.g. The Living Water" enterkeyhint="next">
 
-        <label class="lx-l" for="lxUrl">YouTube link</label>
-        <div class="lx-row"><input class="field" id="lxUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…" enterkeyhint="next"><button type="button" class="lx-paste" id="lxPaste" hidden>Paste</button></div>
-        <p class="lx-help" id="lxUrlMsg" aria-live="polite">In YouTube, tap <b>Share</b> → <b>Copy link</b>, then paste it here.</p>
+        <label class="lx-l" for="lxUrl">Video link</label>
+        <div class="lx-row"><input class="field" id="lxUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://drive.google.com/file/d/…" enterkeyhint="next"><button type="button" class="lx-paste" id="lxPaste" hidden>Paste</button></div>
+        <p class="lx-help" id="lxUrlMsg" aria-live="polite">Paste a Google Drive video link. In Drive, set sharing to <b>Anyone with the link</b> can view.</p>
+        <p class="lx-help lx-also">YouTube links still work too.</p>
+        <!-- [drive-resources] Google Drive: the real Drive player as a preview + the sharing reminder (the page can't check Drive's sharing setting) -->
+        <div class="lx-dprev" id="lxDPrev" hidden>
+          <div class="lx-yt lx-drive" id="lxDFrame"></div>
+          <div class="lx-share" id="lxShare" role="note">
+            <p class="lx-share-h">⚠️ Before you save: check the sharing in Google Drive</p>
+            <p>In Drive, open the video → <b>Share</b> → General access → <b>Anyone with the link</b> → <b>Viewer</b>. If it says <b>Restricted</b>, members will see “You need access” instead of the video.</p>
+            <p>The preview above may play for you even when it’s Restricted, because you’re signed in to Google — so please check the setting itself.</p>
+            <p>Just uploaded it? Drive can need <b>a few minutes</b> after upload before a video plays (it may say it’s still processing). You can save now; it will play once Drive is ready.</p>
+          </div>
+        </div>
         <div class="lx-preview" id="lxPrev" hidden><span class="lx-thumb"><img id="lxPrevImg" alt="Picture from the video"></span><p id="lxPrevTxt"></p></div>
 
         <label class="lx-l" for="lxMarker">Where on the timeline</label>
@@ -76,6 +88,48 @@
       <h3 class="serif">Lessons on the site</h3>
       <p class="hint" id="lxListMsg"></p>
       <ul class="lx-items" id="lxItems"></ul>
+    </section>
+
+    <!-- ===== Add a resource (js/resources-admin.js; table public.resources + private storage bucket "resources") ===== -->
+    <section class="lx-admin rs-admin" id="rsAdmin" aria-labelledby="rsH" hidden>
+      <h2 class="serif" id="rsH">Add a resource</h2>
+      <p class="lx-tip">Share a PDF, a timeline chart or other picture, or a link. Members see it under <b>Resources</b>, and inside the section you pick.</p>
+      <form id="rsForm" novalidate autocomplete="off">
+        <fieldset class="rs-mode"><legend class="lx-l">What are you adding?</legend>
+          <label class="rs-opt"><input type="radio" name="rsMode" value="file" checked> A file (PDF or picture)</label>
+          <label class="rs-opt"><input type="radio" name="rsMode" value="link"> A link</label>
+        </fieldset>
+        <div id="rsFileBox">
+          <label class="lx-l" for="rsFile">File</label>
+          <input class="field rs-file" id="rsFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,.pdf,.png,.jpg,.jpeg,.webp">
+          <p class="lx-help" id="rsFileMsg" aria-live="polite">PDF, PNG, JPG or WebP, up to 45 MB.</p>
+          <div class="rs-fprev" id="rsFPrev" hidden><img id="rsFPrevImg" alt="The picture you chose"><p id="rsFPrevTxt"></p></div>
+        </div>
+        <div id="rsLinkBox" hidden>
+          <label class="lx-l" for="rsUrl">Link</label>
+          <input class="field" id="rsUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…" enterkeyhint="next">
+          <p class="lx-help" id="rsUrlMsg" aria-live="polite">Paste a web address starting with https://</p>
+        </div>
+
+        <label class="lx-l" for="rsTitle">Title</label>
+        <input class="field" id="rsTitle" maxlength="200" placeholder="e.g. Chart: the final week" enterkeyhint="next">
+
+        <label class="lx-l" for="rsNote">Your note <small>(optional)</small></label>
+        <textarea class="field" id="rsNote" rows="4" maxlength="5000" placeholder="A sentence or two: what it is and why it helps."></textarea>
+        <p class="lx-help">This is <b>your note as group leader — not Scripture</b>. Members see it under the label <b>LEADER’S NOTE</b>, kept separate from the Bible text.</p>
+
+        <label class="lx-l" for="rsMarker">Where on the timeline <small>(optional)</small></label>
+        <select class="field" id="rsMarker"><option value="">General (Resources list only)</option></select>
+        <p class="lx-help">Every resource shows under “Resources” at the top of the member page. Pick a date or feast to show it inside that section too.</p>
+
+        <p class="rs-type" id="rsType" aria-live="polite"></p>
+        <button class="btn" id="rsSave" type="submit">Upload and add</button>
+        <p class="msg" id="rsMsg" role="status" aria-live="polite"></p>
+      </form>
+
+      <h3 class="serif">Resources on the site</h3>
+      <p class="hint" id="rsListMsg"></p>
+      <ul class="lx-items" id="rsItems"></ul>
     </section>
 
     <p class="hint" id="updated"></p>
@@ -150,6 +204,8 @@
 <script src="js/common.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/lessons-admin.js"></script>
+<script src="js/resources.js"></script>
+<script src="js/resources-admin.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

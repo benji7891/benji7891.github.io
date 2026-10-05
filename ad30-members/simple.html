@@ -21,6 +21,7 @@
 <!-- [lessons-merge] video lessons -->
 <link rel="stylesheet" href="css/lessons.css">
 <link rel="stylesheet" href="css/lessons-member.css">
+<link rel="stylesheet" href="css/resources.css">
 </head>
 <body>
 
@@ -82,6 +83,14 @@
     <button class="lxm-all" id="lxAll" type="button" hidden></button>
   </section>
 
+  <!-- [drive-resources] PDFs, pictures and links from the group leaders (js/resources.js) -->
+  <section class="lxm-top rsm-top" id="rsShelf" aria-labelledby="rsShelfH" hidden>
+    <h2 class="lxm-h serif" id="rsShelfH">Resources</h2>
+    <p class="lxm-sub">PDFs, charts, pictures and links from the group leaders</p>
+    <ul class="rsm-list" id="rsList"></ul>
+    <button class="lxm-all" id="rsAll" type="button" hidden></button>
+  </section>
+
   <!-- [simple-rework] the sections: tap a title to open it (built by js/simple.js from js/simple-data.js) -->
   <p class="sx-hint">Tap a title to open it.</p>
   <ol class="sx-list" id="sxList" aria-label="Study sections"></ol>
@@ -133,6 +142,7 @@
 <!-- [simple-rework] js/app.js (six cards + bottom sheet) is no longer loaded here; js/simple.js replaces it -->
 <!-- [lessons-merge] video lessons (must load before js/simple.js) -->
 <script src="js/lessons.js"></script>
+<script src="js/resources.js"></script>
 <script src="js/lessons-member.js"></script>
 <script src="js/simple-data.js"></script>
 <script src="js/simple.js"></script>
