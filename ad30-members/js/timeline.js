@@ -3,7 +3,24 @@
    Open all / Close all, #marker deep links, the three RL7.1a video players), plus:
    the sign-in gate, engagement logging (page view, marker opened, video play/25/50/75/complete),
    videos from Sam's Google Sheet attached to the matching timeline marker, and the account box. */
-(function () {
+// [teacher-notes-fix] The teacher timeline HTML now lives in the admin-only table public.teacher_content.
+// Before the page's code runs, a signed-in group leader's copy is fetched and put into #tlHost.
+// Visitors and members get nothing (the database refuses them), and the code below sends members on to simple.html as before.
+(function (boot) {
+  var A = window.AD30, host = document.getElementById("tlHost"), done = false;
+  function go() { if (done) return; done = true; boot(); }
+  try {
+    if (!A || !A.sb || !host) return go();
+    setTimeout(go, 8000);   // never leave the page stuck
+    A.sb.auth.getSession().then(function (r) {
+      if (!(r && r.data && r.data.session)) return go();
+      return A.sb.from("teacher_content").select("html").eq("key", "teacher_timeline").maybeSingle().then(function (q) {
+        if (!done && q && q.data && q.data.html) host.innerHTML = q.data.html;
+        go();
+      });
+    }).catch(go);
+  } catch (e) { go(); }
+})(function () {
   "use strict";
   var AD30 = window.AD30, $ = AD30.$, LS = AD30.LS, esc = AD30.esc;
   var bar = document.querySelector(".bar"), allBtn = $("all");
@@ -384,4 +401,4 @@
   }
 
   window.__tl = { setOpen: setOpen, openTarget: openTarget, findEvent: findEvent };
-})();
+});
