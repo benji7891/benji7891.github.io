@@ -99,6 +99,8 @@
 
     var dateP = el("p", "gtc-date"); dateP.setAttribute("aria-live", "polite");
     body.appendChild(dateP);
+    var evHint = el("p", "gtc-evhint"); evHint.setAttribute("aria-live", "polite");   // event name(s) for the picked minute
+    if (C.SHOW_GWC_EVENTS) body.appendChild(evHint);
 
     var nowP = G.rightNow("gtc-now", nowClock, function (m) { setTime(m); });
     body.appendChild(nowP);
@@ -192,26 +194,38 @@
       tlMore.textContent = state.showAll ? "Show fewer" : "Show all 60 minutes";
       tlMore.setAttribute("aria-expanded", state.showAll ? "true" : "false");
     }
+    function evItem(e, withClock) {          // ORIGINAL Great World Clock wording, shown as-is
+      var li = el("li", "gtc-evi");
+      li.appendChild(el("b", "gtc-evt", e.title));
+      li.appendChild(el("span", "gtc-evd", (withClock ? clockText(12, e.minute) + " \u00b7 " : "") + e.date + (e.gwcTime ? " \u00b7 GWC " + e.gwcTime : "")));
+      if (e.description) li.appendChild(el("p", "gtc-evdesc", e.description));
+      if (e.sources && e.sources.length) li.appendChild(G.sourceLinks(e.sources, "gtc-evs"));
+      return li;
+    }
     function renderEvents() {
       if (!evBox) return;
-      evBox.innerHTML = "";
+      evBox.innerHTML = ""; evHint.textContent = "";
       evBox.appendChild(el("h3", "gtc-h", "What happened at " + clockText(12, state.minute)));
-      var note = el("p", "gtc-sub", "From the Great World Clock list (its own clock times; its 12:00 = Jan 1, 2001). Internal review only.");
-      evBox.appendChild(note);
+      evBox.appendChild(el("p", "gtc-sub", "Events from the original Great World Clock list (unverified). The clock itself is SPECULATION."));
       if (state.events === null) { evBox.appendChild(el("p", "gtc-evnone", "Loading\u2026")); return; }
       if (state.events === false) { evBox.appendChild(el("p", "gtc-evnone", "Couldn\u2019t load the list.")); return; }
       var list = G.eventsFor(state.events, state.minute);
-      if (!list.length) { evBox.appendChild(el("p", "gtc-evnone", "Nothing listed for " + clockText(12, state.minute) + ".")); return; }
-      var ul = el("ul", "gtc-evlist");
-      list.forEach(function (e) {
-        var li = el("li", "gtc-evi");
-        li.appendChild(el("b", "gtc-evt", e.title));
-        li.appendChild(el("span", "gtc-evd", e.date + " \u00b7 " + e.gwcTime));
-        if (e.description) li.appendChild(el("p", "gtc-evp", e.description));
-        if (e.sources && e.sources.length) li.appendChild(G.sourceLinks(e.sources, "gtc-evs"));
-        ul.appendChild(li);
+      evHint.textContent = list.length ? list.map(function (e) { return e.title; }).join(" \u00b7 ") : "";
+      if (!list.length) evBox.appendChild(el("p", "gtc-evnone", "Nothing listed for " + clockText(12, state.minute) + "."));
+      else { var ul = el("ul", "gtc-evlist"); list.forEach(function (e) { ul.appendChild(evItem(e, false)); }); evBox.appendChild(ul); }
+      var all = el("details", "gtc-evall");
+      all.appendChild(el("summary", "", "All events by clock minute (" + state.events.length + ")"));
+      G.groupEvents(state.events).forEach(function (grp) {
+        all.appendChild(el("h4", "gtc-evcat", grp.category));
+        var ul2 = el("ul", "gtc-evlist");
+        grp.events.forEach(function (e) {
+          var li = evItem(e, true); li.style.cursor = "pointer";
+          li.addEventListener("click", function () { setTime(e.minute); });
+          ul2.appendChild(li);
+        });
+        all.appendChild(ul2);
       });
-      evBox.appendChild(ul);
+      evBox.appendChild(all);
     }
     function countLabels() {     // like the desktop dropdown "12:20 (3)", only while events are switched on
       if (!state.events) return;

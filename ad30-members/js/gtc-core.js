@@ -12,7 +12,7 @@
     CLOCK_OPTIONS: ["antique"],              // Sam chose antique (Oct 2026). Was ["antique","modern"]; switch kept so a second design can be re-added later.
     // "What happened at this time" (Great World Clock data, data/gwc-events.json). OFF until Ben confirms permission.
     // While false: no events section in either panel and the JSON is never downloaded.
-    SHOW_GWC_EVENTS: false,
+    SHOW_GWC_EVENTS: true,                  // STAGED: ORIGINAL Great World Clock list (data/gwc-events.json), unverified, as-is
     HOURS: [12],                              // the desktop app's clock runs 12:00-12:59 only
     KEY_MINUTES: [0, 15, 20, 30, 36, 42, 45, 59],
     EVENTS_URL: "data/gwc-events.json"
@@ -106,10 +106,16 @@
     if (!CONFIG.SHOW_GWC_EVENTS) return null;
     if (!evPromise) evPromise = fetch(CONFIG.EVENTS_URL, { cache: "no-cache", credentials: "same-origin" })
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(function (j) { return (j && j.events) || []; });
+      .then(function (j) { return ((j && j.events) || []).slice().sort(function (a, b) { return a.minute - b.minute || (a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0); }); });
     return evPromise;
   };
   API.eventsFor = function (events, minute) { return events.filter(function (e) { return e.minute === minute; }); };
+  // Group the whole list by category (order of first appearance), for the "All events" list
+  API.groupEvents = function (events) {
+    var order = [], g = {};
+    events.forEach(function (e) { var k = e.category || ("12:" + pad(e.minute)); if (!g[k]) { g[k] = []; order.push(k); } g[k].push(e); });
+    return order.map(function (c) { return { category: c, events: g[c] }; });
+  };
   API.sourceLinks = function (sources, cls) {
     var span = document.createElement("span"); span.className = cls;
     sources.forEach(function (u, i) {
