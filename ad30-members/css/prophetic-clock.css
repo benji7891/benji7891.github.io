@@ -101,3 +101,12 @@
 .gtc-evs a{color:var(--gold, #d9b870)}
 .gtc-evnone{margin:0; font-size:14px; color:var(--muted, #9a9fa8)}
 
+
+/* STAGED: event name under the date, grouped list */
+.gtc-evhint{margin:.2rem 0 .4rem;font-weight:700;color:#7a4a12;text-align:center}
+.gtc-evhint:empty{display:none}
+.gtc-evall summary{cursor:pointer;margin:.5rem 0}
+.gtc-evcat{margin:.6rem 0 .2rem;font-size:.95em}
+
+/* original GWC description text */
+.gtc-evdesc { margin: .25em 0 0; font-size: .85em; line-height: 1.4; white-space: pre-line; opacity: .9; }
