@@ -172,7 +172,7 @@
     var m = String((e && (e.message || e.details || e.hint)) || (e && typeof e === "object" ? JSON.stringify(e) : e) || ""), code = String(e && e.code || "");
     if (L.isMissingColumn && L.isMissingColumn(e)) return "Google Drive videos need one more setup step in Supabase first: Ben needs to run migrations/2026-10-04_drive_resources.sql. Nothing was saved — what you typed is kept on this phone. (YouTube links already work.)";
     if (L.isMissingTable(e)) return "The lessons list isn’t switched on yet: Ben needs to run one setup step in Supabase (migrations/2026-10-04_lessons.sql). Nothing was saved — what you typed is kept on this phone.";
-    if (code === "42501" || /row-level security|permission denied/i.test(m)) return "Only group leaders can do this, and the database doesn’t list this email as one. Nothing was saved.";
+    if (code === "42501" || /row-level security|permission denied/i.test(m)) return "Only Admins can do this, and the database doesn’t list this email as one. Nothing was saved.";
     if (/AD30_NOT_SAVED/.test(m)) return "That didn’t save — the lesson may have been deleted. Reload the page and try again.";
     if (code === "23514" || /check constraint/i.test(m)) return "Something in the form isn’t allowed (for example a title that is too long). Nothing was saved.";
     if (/timeout|fetch|network|load failed/i.test(m)) return "Couldn’t reach the website’s database. Check your internet connection and tap Save again. What you typed is kept.";
@@ -216,7 +216,7 @@
       if (res.missing) { rows = []; showMissing(); paintList(); return; }
       if (res.error) { $("lxListMsg").textContent = "Couldn’t load the lessons just now (" + res.error + "). Reload the page to try again."; $("lxListMsg").className = "hint lx-warn"; return; }
       missing = false; rows = res.rows; $("lxListMsg").className = "hint";
-      $("lxListMsg").textContent = rows.length ? "Newest first. “Hidden” lessons are only visible to group leaders." : "";
+      $("lxListMsg").textContent = rows.length ? "Newest first. “Hidden” lessons are only visible to Admins." : "";
       paintList();
     });
   }
@@ -260,6 +260,7 @@
   }
 
   /* ---------- start (called by admin.js after the admin check) ---------- */
+  A.reload = function () { return loadList(); };   // [admin-combined]
   A.start = function () {
     if (started || !$("lxAdmin")) return; started = true;
     $("lxAdmin").hidden = false;

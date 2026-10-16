@@ -627,7 +627,7 @@
     });
     top.hidden = false;
     var lg = document.querySelector(".legend p:nth-child(2)");
-    if (lg && !lg.querySelector(".kL")) lg.insertAdjacentHTML("beforeend", ' · <span class="tag kL">LESSON SUMMARY</span> the group leader’s summary of a video lesson (teaching, not Scripture)');
+    if (lg && !lg.querySelector(".kL")) lg.insertAdjacentHTML("beforeend", ' · <span class="tag kL">LESSON SUMMARY</span> the Admin’s summary of a video lesson (teaching, not Scripture)');
     L._apply = tl.apply;
     if (tl.apply) tl.apply();
     if (tl.paintWatched) tl.paintWatched();

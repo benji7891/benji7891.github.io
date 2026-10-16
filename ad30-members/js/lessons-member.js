@@ -100,7 +100,7 @@
       '<p class="lxm-d">' + esc(whereLine(row)) + "</p>" +
       '<div class="lx-media lxm-media"><button type="button" class="lx-thumb" aria-label="Play video: ' + esc(row.title) + '">' +
         '<img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>' +
-      (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the group leader — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
+      (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the Admin — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
       versesBox(row.verse_refs, false);
     el.querySelector(".lx-thumb").addEventListener("click", function () {
       L.player(el.querySelector(".lxm-media"), row);
@@ -112,7 +112,7 @@
   function sectionBox(secId) {
     var rows = lessonsFor(secId); if (!rows.length) return null;
     var box = document.createElement("div"); box.className = "lxm"; box.setAttribute("data-sec", secId);
-    box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + ' <small>from the group leaders</small></h3>';
+    box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + ' <small>from the Admins</small></h3>';
     rows.forEach(function (r) { box.appendChild(lessonBlock(r, "lxm-")); });
     return box;
   }
@@ -212,7 +212,7 @@
   function lessonNotes(s) {
       if (s.extra) return "";
       var rows = lessonsFor(s.id); if (!rows.length) return "";
-      var h = '<section class="lxn"><h2 class="nt-th">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + '</h2><p class="nt-note">From the group leaders — teaching, not Scripture. Verses are KJV.</p>';
+      var h = '<section class="lxn"><h2 class="nt-th">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + '</h2><p class="nt-note">From the Admins — teaching, not Scripture. Verses are KJV.</p>';
       rows.forEach(function (r) {
         var sum = L.summaryHTML(r.summary);
         h += '<div class="lxn-l"><h3 class="lxn-t">' + esc(r.title) + '</h3><p class="lxn-d">' + esc(whereLine(r)) + "</p>" +

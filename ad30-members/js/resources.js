@@ -141,7 +141,7 @@
         '<p class="rs-kick">' + esc(R.kindLabel(r)) + (L && L.isNew && L.isNew(r) ? ' <span class="lx-new">NEW</span>' : "") + "</p>" +
         '<h3 class="rs-t">' + a("rs-tl", esc(r.title)) + "</h3>" +
         (opts.where ? '<p class="rs-w">' + esc(opts.where) + "</p>" : "") +
-        (opts.note !== false && r.note ? '<div class="rs-note"><p class="rs-lab"><span class="rs-tag">LEADER’S NOTE</span> <span class="rs-labt">from the group leader — not Scripture</span></p><div class="rs-nt">' +
+        (opts.note !== false && r.note ? '<div class="rs-note"><p class="rs-lab"><span class="rs-tag">ADMIN’S NOTE</span> <span class="rs-labt">from the Admin — not Scripture</span></p><div class="rs-nt">' +
           (L && L.summaryHTML ? L.summaryHTML(r.note) : "<p>" + esc(r.note) + "</p>") + "</div></div>" : "") +
         '<p class="rs-open">' + a("rs-ol", esc(R.openLabel(r)) + ' <span aria-hidden="true">↗</span>') + "</p>" +
       "</div>";
@@ -162,7 +162,7 @@
   function sectionBox(s) {
     var rows = forSection(s.id); if (!rows.length) return null;
     var box = document.createElement("div"); box.className = "rsm"; box.setAttribute("data-sec", s.id);
-    box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Resources" : "Resource") + " <small>from the group leaders</small></h3>";
+    box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Resources" : "Resource") + " <small>from the Admins</small></h3>";
     rows.forEach(function (r) { box.appendChild(R.item(r, { id: "rsm-" + r.id, where: "Added " + dateLabel(r.created_at) })); });
     return box;
   }
@@ -234,10 +234,10 @@
     notes: function (s) {
       if (s.extra) return "";
       var rows = forSection(s.id); if (!rows.length) return "";
-      var h = '<section class="rsn"><h2 class="nt-th">' + (rows.length > 1 ? "Resources" : "Resource") + '</h2><p class="nt-note">From the group leaders. Open the files on the website.</p>';
+      var h = '<section class="rsn"><h2 class="nt-th">' + (rows.length > 1 ? "Resources" : "Resource") + '</h2><p class="nt-note">From the Admins. Open the files on the website.</p>';
       rows.forEach(function (r) {
         h += '<div class="rsn-r"><h3 class="rsn-t">' + esc(r.title) + ' <small class="rsn-k">(' + esc(R.kindLabel(r)) + ")</small></h3>" +
-          (r.note ? '<p class="rsn-lab"><span class="rs-tag">LEADER’S NOTE</span></p><div class="rsn-n">' + (L && L.summaryHTML ? L.summaryHTML(r.note) : esc(r.note)) + "</div>" : "") + "</div>";
+          (r.note ? '<p class="rsn-lab"><span class="rs-tag">ADMIN’S NOTE</span></p><div class="rsn-n">' + (L && L.summaryHTML ? L.summaryHTML(r.note) : esc(r.note)) + "</div>" : "") + "</div>";
       });
       return h + "</section>";
     },
@@ -257,7 +257,7 @@
           if (!li || !li.classList.contains("ev") || li.classList.contains("sv") || $("rsf-" + r.id)) return;
           var body = li.querySelector(".body"); if (!body) return;
           var box = document.createElement("div"); box.className = "rs-fig"; box.id = "rsf-" + r.id;
-          box.appendChild(R.item(r, { where: "Resource from the group leaders · added " + dateLabel(r.created_at) }));
+          box.appendChild(R.item(r, { where: "Resource from the Admins · added " + dateLabel(r.created_at) }));
           body.appendChild(box);
           var t = li.querySelector(".ttl"), d = li.querySelector(".dt");
           r._where = (t ? t.textContent : "") + (d && L ? " · " + L.shortDate(d.textContent) : "");

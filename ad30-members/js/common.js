@@ -238,7 +238,7 @@
     var m = String((err && (err.message || err.msg || err.error_description)) || err || "");
     var st = err && err.status;
     if (/AD30_NOT_INVITED|database error saving new user|not.*invited|signups? not allowed/i.test(m))
-      return "That email isn’t on the study-group list yet. Ask " + (C.CONTACT_NAME || "the group leader") + " to add it, then try again.";
+      return "That email isn’t on the study-group list yet. Ask " + (C.CONTACT_NAME || "the Admin") + " to add it, then try again.";
     if (/email address not authorized/i.test(m))
       return "The site’s email sender isn’t switched on yet (Supabase custom SMTP). Please tell Sam or Ben.";
     var sec = m.match(/after (\d+) seconds?/i);

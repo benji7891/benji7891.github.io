@@ -226,6 +226,7 @@
         $("adminBody").hidden = false;
         try { if (window.AD30LA) window.AD30LA.start(user); } catch (e) { if (window.console) console.warn("[lessons]", e); }
         try { if (window.AD30RA) window.AD30RA.start(user); } catch (e) { if (window.console) console.warn("[resources]", e); }   // [drive-resources]
+        try { if (window.AD30CA) window.AD30CA.start(user); } catch (e) { if (window.console) console.warn("[combined]", e); }   // [admin-combined]
         refresh(); sheetCheck();
       });
     },

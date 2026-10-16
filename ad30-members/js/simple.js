@@ -523,7 +523,7 @@
     $("page").hidden = false;
     AD30.track("page_view");
     setupAccount(user);
-    var lessonsDone = Promise.resolve();   // merge hook: video lessons from the group leader page (js/lessons.js), if present
+    var lessonsDone = Promise.resolve();   // merge hook: video lessons from the Admin page (js/lessons.js), if present
     try { if (window.AD30L && window.AD30L.simple && $("lxSimple")) lessonsDone = window.AD30L.simple().catch(function () {}); } catch (e) {}
     var status = $("vidStatus");
     var h = decodeURIComponent(location.hash.slice(1));

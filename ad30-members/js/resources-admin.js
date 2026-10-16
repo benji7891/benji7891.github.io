@@ -9,7 +9,7 @@
   if (!AD30 || !L || !R) return;
   var $ = AD30.$, esc = AD30.esc;
   var A = (window.AD30RA = {});
-  var rows = [], started = false, missing = false, fileState = { error: "empty" }, linkState = { error: "empty" }, previewUrl = null;
+  var rows = [], editing = null, started = false, missing = false, fileState = { error: "empty" }, linkState = { error: "empty" }, previewUrl = null;
   var MIG = "migrations/2026-10-04_drive_resources.sql";
   var MISSING = { code: "PGRST205", message: "The resources table doesn't exist yet (HTTP 404)" };
 
@@ -50,7 +50,7 @@
     fileState = r; if (!r.error) { r.file = f; r.size = f.size; }
     prev.hidden = true;
     if (r.error) {
-      help(msg, r.error === "empty" ? "PDF, PNG, JPG or WebP, up to 45 MB." : FILE_ERR[r.error], r.error === "empty" ? "lx-help" : "lx-warn");
+      help(msg, r.error === "empty" ? (editing ? "Keeping the current file." : "PDF, PNG, JPG or WebP, up to 45 MB.") : FILE_ERR[r.error], r.error === "empty" ? "lx-help" : "lx-warn");
       showType(); return;
     }
     help(msg, "Ready to add ✓ " + esc(f.name) + " (" + R.size(f.size) + ")", "lx-good");
@@ -58,7 +58,7 @@
       previewUrl = URL.createObjectURL(f); $("rsFPrevImg").src = previewUrl; $("rsFPrevImg").hidden = false; $("rsFPrevTxt").textContent = "";
     } else { $("rsFPrevImg").hidden = true; $("rsFPrevImg").removeAttribute("src"); $("rsFPrevTxt").textContent = "📄 " + f.name; }
     prev.hidden = false;
-    if (!$("rsTitle").value.trim()) $("rsTitle").value = f.name.replace(/\.[a-z0-9]{1,5}$/i, "").replace(/[_-]+/g, " ").trim().slice(0, 200);
+    if (!editing && !$("rsTitle").value.trim()) $("rsTitle").value = f.name.replace(/\.[a-z0-9]{1,5}$/i, "").replace(/[_-]+/g, " ").trim().slice(0, 200);
     showType();
   }
   function checkLink(final) {
@@ -73,7 +73,7 @@
   function setMode() {
     var m = mode();
     $("rsFileBox").hidden = m !== "file"; $("rsLinkBox").hidden = m !== "link";
-    $("rsSave").textContent = m === "file" ? "Upload and add" : "Add link";
+    $("rsSave").textContent = editing ? "Save changes" : m === "file" ? "Upload and add" : "Add link";
     showType();
   }
 
@@ -112,7 +112,7 @@
   function errText(e) {
     var m = String((e && (e.message || e.error || e.details || e.hint)) || (e && typeof e === "object" ? JSON.stringify(e) : e) || ""), code = String(e && (e.code || e.statusCode || e.status) || "");
     if (R.isMissingTable(e) || /bucket not found/i.test(m)) return "Resources aren’t switched on yet: Ben needs to run one setup step in Supabase (" + MIG + "). Nothing was saved.";
-    if (code === "42501" || code === "403" || /row-level security|permission denied|unauthorized/i.test(m)) return "Only group leaders can do this, and the database doesn’t list this email as one. Nothing was saved.";
+    if (code === "42501" || code === "403" || /row-level security|permission denied|unauthorized/i.test(m)) return "Only Admins can do this, and the database doesn’t list this email as one. Nothing was saved.";
     if (code === "413" || /too large|exceeded the maximum/i.test(m)) return FILE_ERR.size;
     if (/mime type|not supported/i.test(m)) return FILE_ERR.type;
     if (code === "23514" || /check constraint/i.test(m)) return "Something in the form isn’t allowed (for example a title that is too long). Nothing was saved.";
@@ -126,6 +126,7 @@
     var msg = $("rsMsg"), title = $("rsTitle").value.trim(), m = mode();
     var row = { title: title.slice(0, 200), note: $("rsNote").value.trim() || null, marker_id: $("rsMarker").value || null };
     if (row.marker_id && !L.validMarker(row.marker_id)) row.marker_id = null;
+    if (editing) return saveEdit(row, msg);
     if (m === "file") {
       checkFile();
       if (fileState.error) { say(msg, fileState.error === "empty" ? "Please choose a file (PDF or picture)." : "Please check the file (see the note under it).", "err"); return; }
@@ -177,7 +178,87 @@
       if (R.isMissingTable(e)) showMissing();
     });
   }
+  /* ---------- edit (title, note, timeline spot; optionally a new file / new link) ---------- */
+  function uploadFile(fs) {
+    var d = new Date(), dir = d.getFullYear() + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + rand() + "/";
+    var out = { kind: fs.kind, mime: fs.mime, size_bytes: fs.size, storage_path: dir + safeName(fs.file.name, fs.ext), thumb_path: null }, uploaded = [];
+    var body = fs.file.type === fs.mime ? fs.file : fs.file.slice(0, fs.file.size, fs.mime);
+    return R.timeout(storage().upload(out.storage_path, body, { contentType: fs.mime, upsert: false, cacheControl: "3600" }), 10 * 60 * 1000).then(function (r) {
+      if (r.error) throw r.error;
+      uploaded.push(out.storage_path);
+      if (fs.kind !== "image") return null;
+      return makeThumb(fs.file).then(function (blob) {
+        if (!blob) return null;
+        var tp = dir + "preview-" + rand().slice(0, 8) + ".jpg";
+        return R.timeout(storage().upload(tp, blob, { contentType: "image/jpeg", upsert: false, cacheControl: "3600" }), 60000).then(function (t) {
+          if (!t.error) { uploaded.push(tp); out.thumb_path = tp; }
+        }, function () {});
+      });
+    }).then(function () { return { row: out, uploaded: uploaded }; });
+  }
+  function saveEdit(row, msg) {
+    var ed = editing, isFile = !!ed.storage_path, fs = fileState, step = Promise.resolve({ row: {}, uploaded: [] }), oldFiles = [];
+    if (!row.title) { say(msg, "Please type a title.", "err"); $("rsTitle").focus(); return; }
+    if (isFile) {
+      checkFile(); fs = fileState;
+      if (fs.error && fs.error !== "empty") { say(msg, "Please check the new file (see the note under it), or clear it to keep the current one.", "err"); return; }
+      if (!fs.error) {
+        busy(true, "Uploading…"); say(msg, "Uploading the new file (" + R.size(fs.size) + ")… please keep this page open.");
+        step = uploadFile(fs); oldFiles = [ed.storage_path, ed.thumb_path].filter(Boolean);
+      }
+    } else {
+      checkLink(true);
+      if (linkState.error) { say(msg, linkState.error === "empty" ? "Please paste the link." : "Please check the link (see the note under it).", "err"); return; }
+      row.url = linkState.url; row.kind = linkState.kind;
+    }
+    busy(true, "Saving…");
+    var uploaded = [];
+    return step.then(function (u) {
+      uploaded = u.uploaded; for (var k in u.row) row[k] = u.row[k];
+      return R.timeout(AD30.sb.from("resources").update(row).eq("id", ed.id).select("id,title,marker_id,published"), 15000);
+    }).then(function (r) {
+      if (r.error && r.status === 404) throw MISSING;
+      if (r.error || !r.data || !r.data.length) throw r.error || { message: "AD30_NOT_UPDATED" };
+      var extra = "";
+      // new file saved: now remove the old one (only after the row points at the new file)
+      var done = oldFiles.length ? R.timeout(storage().remove(oldFiles), 30000).then(function (x) { if (x && x.error) extra = " (The old file couldn’t be removed from storage just now; it’s no longer shown anywhere.)"; }, function () { extra = " (The old file couldn’t be removed from storage just now; it’s no longer shown anywhere.)"; }) : Promise.resolve();
+      return done.then(function () {
+        var d = r.data[0];
+        editing = null; busy(false); clearForm();
+        say(msg, "Saved ✓ “" + d.title + "” is updated — " + where(d.marker_id) + (d.published === false ? " (hidden from members until you tap Show)." : ".") + (oldFiles.length ? " The new file replaced the old one." : "") + extra, "ok");
+        loadList();
+      });
+    }).catch(function (e) {
+      busy(false);
+      if (uploaded.length) storage().remove(uploaded).then(function () {}, function () {});   // keep the old file; drop the new upload
+      var nothing = e && e.message === "AD30_NOT_UPDATED";
+      say(msg, nothing ? "That didn’t save. The database may not allow edits yet (Ben needs to run migrations/2026-10-16_resources_edit.sql), or this resource was deleted. Nothing was changed." : errText(e), "err");
+      if (R.isMissingTable(e)) showMissing();
+    });
+  }
+  function setEditing(r) {
+    clearForm();
+    editing = r;
+    var isFile = !!r.storage_path;
+    document.querySelector('input[name="rsMode"][value="' + (isFile ? "file" : "link") + '"]').checked = true;
+    $("rsModeBox").hidden = true; $("rsKeepMsg").hidden = !isFile;
+    $("rsTitle").value = r.title || ""; $("rsNote").value = r.note || "";
+    fillSelect(); $("rsMarker").value = r.marker_id && L.validMarker(r.marker_id) ? r.marker_id : "";
+    if (r.marker_id && $("rsMarker").value !== r.marker_id) {             // marker no longer on the timeline: keep it selectable
+      var o = document.createElement("option"); o.value = r.marker_id; o.textContent = where(r.marker_id); $("rsMarker").appendChild(o); $("rsMarker").value = r.marker_id;
+    }
+    if (!isFile) { $("rsUrl").value = r.url || ""; checkLink(true); } else checkFile();
+    $("rsH").textContent = "Edit resource"; $("rsCancel").hidden = false;
+    setMode();
+    say($("rsMsg"), "Editing “" + r.title + "”. Change anything, then tap Save changes.");
+    $("rsAdmin").scrollIntoView({ block: "start", behavior: "smooth" });
+  }
   function clearForm() {
+    editing = null;
+    if ($("rsModeBox")) $("rsModeBox").hidden = false;
+    if ($("rsKeepMsg")) $("rsKeepMsg").hidden = true;
+    if ($("rsCancel")) $("rsCancel").hidden = true;
+    $("rsH").textContent = "Add a resource";
     $("rsForm").reset(); fileState = { error: "empty" }; linkState = { error: "empty" };
     if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (e) {} previewUrl = null; }
     $("rsFPrev").hidden = true; fillSelect(); setMode(); checkFile(); checkLink(false);
@@ -196,7 +277,7 @@
       missing = false; $("rsListMsg").className = "hint";
       return R.sign(res.rows).then(function (list) {
         rows = list; R.keepFresh(rows);
-        $("rsListMsg").textContent = rows.length ? "Newest first. Tap Delete to remove one from the site." : "";
+        $("rsListMsg").textContent = rows.length ? "Newest first. Edit to change one, Hide to take it off the members’ page, Delete to remove it." : "";
         paint();
       });
     });
@@ -205,11 +286,23 @@
     var ul = $("rsItems"); ul.innerHTML = "";
     if (!rows.length) { if (!missing) ul.innerHTML = '<li class="lx-empty">No resources yet — add the first one above.</li>'; return; }
     rows.forEach(function (r) {
-      var li = document.createElement("li"); li.className = "lx-item rs-aitem"; li.setAttribute("data-rs", r.id);
+      var li = document.createElement("li"); li.className = "lx-item rs-aitem" + (r.published === false ? " hidden-l" : ""); li.setAttribute("data-rs", r.id);
       li.appendChild(R.item(r, { where: where(r.marker_id) + " · added " + L.dateLabel(r.created_at) + (r.created_by ? " by " + r.created_by : "") + (r.size_bytes ? " · " + R.size(r.size_bytes) : "") }));
+      var st = document.createElement("span"); st.className = "lx-state " + (r.published === false ? "off" : "on");
+      st.textContent = r.published === false ? "Hidden from members" : "Showing on the site"; li.appendChild(st);
       var acts = document.createElement("div"); acts.className = "lx-acts";
-      acts.innerHTML = '<button type="button" class="del" data-a="del">Delete</button>';
-      acts.querySelector("button").addEventListener("click", function (e) {
+      acts.innerHTML = '<button type="button" data-a="edit">Edit</button><button type="button" data-a="vis">' + (r.published === false ? "Show" : "Hide") + '</button><button type="button" class="del" data-a="del">Delete</button>';
+      acts.querySelector('[data-a="edit"]').addEventListener("click", function () { setEditing(r); });
+      acts.querySelector('[data-a="vis"]').addEventListener("click", function (e) {
+        var b = e.currentTarget, show = r.published === false; b.disabled = true;
+        R.timeout(AD30.sb.from("resources").update({ published: show }).eq("id", r.id).select("id,published"), 15000).then(function (res) {
+          if (res.error && res.status === 404) throw MISSING;
+          if (res.error || !res.data || !res.data.length) throw res.error || { message: "Nothing changed. The database may not allow edits yet (Ben needs to run migrations/2026-10-16_resources_edit.sql)." };
+          say($("rsMsg"), "“" + r.title + "” is now " + (show ? "showing on the site." : "hidden from members."), "ok");
+          loadList();
+        }).catch(function (err) { b.disabled = false; alert(errText(err)); });
+      });
+      acts.querySelector('[data-a="del"]').addEventListener("click", function (e) {
         if (!confirm("Delete “" + r.title + "” from the site?\n\nThis can’t be undone." + (r.storage_path ? " The uploaded file is deleted too." : ""))) return;
         var b = e.currentTarget; b.disabled = true;
         R.timeout(AD30.sb.from("resources").delete().eq("id", r.id).select("id"), 15000).then(function (res) {
@@ -219,6 +312,7 @@
           if (!files.length) return "";
           return R.timeout(storage().remove(files), 30000).then(function (x) { return x && x.error ? " (The file itself couldn’t be removed from storage just now; it’s no longer shown anywhere.)" : ""; }, function () { return " (The file itself couldn’t be removed from storage just now; it’s no longer shown anywhere.)"; });
         }).then(function (extra) {
+          if (editing && editing.id === r.id) clearForm();
           say($("rsMsg"), "Deleted “" + r.title + "”." + (extra || ""), "ok");
           loadList();
         }, function (err) { b.disabled = false; alert(errText(err)); });
@@ -239,8 +333,10 @@
     $("rsUrl").addEventListener("input", function () { checkLink(false); });
     $("rsUrl").addEventListener("blur", function () { if ($("rsUrl").value.trim()) checkLink(true); });
     $("rsForm").addEventListener("submit", onSave);
+    $("rsCancel").addEventListener("click", function () { clearForm(); say($("rsMsg"), "Editing cancelled — nothing was changed."); });
     setMode();
     loadList();
   };
-  A._state = function () { return { rows: rows, missing: missing, file: fileState, link: linkState }; };
+  A.uploadFile = uploadFile; A.reload = function () { return loadList(); };   // [admin-combined] used by the one simple form
+  A._state = function () { return { rows: rows, editing: editing, missing: missing, file: fileState, link: linkState }; };
 })();
