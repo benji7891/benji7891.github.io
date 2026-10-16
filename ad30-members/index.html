@@ -147,7 +147,7 @@ footer .n{font-family:var(--sans);font-size:12.5px;color:#777;margin-top:6px}
 <!-- ============ THE TIMELINE (after sign-in); content copied unchanged from /ad30-timeline/ ============ -->
 <div id="page" hidden>
 <!-- [simple-rework] this page is the Teacher view (group leaders only); members use simple.html (Member view) -->
-<nav class="mstrip" aria-label="Members"><span class="vw-cur" aria-current="page">Teacher view</span><a href="simple.html">Member view</a><a id="adminTop" href="admin.html" hidden>Group leader view</a><a href="#acct">Account</a></nav>
+<nav class="mstrip" aria-label="Members"><span class="vw-cur" aria-current="page">Teacher view</span><a href="simple.html">Member view</a><a id="adminTop" href="admin.html" hidden>Admin view</a><a href="#acct">Account</a></nav>
 <header><h1>AD 30 on One Line: <i>The Thirtieth Year</i></h1>
 <p class="sub">Prof. Zac’s Study Guide 4 on one chronological line, from the birth to Pentecost, with John’s Gospel as the spine · KJV · Prepared Sun, Sept 27, 2026</p>
 <!-- [hotfix-cd] 10 Nisan countdown (Teacher view only; filled by js/timeline.js) -->
@@ -165,9 +165,9 @@ footer .n{font-family:var(--sans);font-size:12.5px;color:#777;margin-top:6px}
 <div class="bar"><div class="chips" role="group" aria-label="Filter">
 <button class="chip cT" data-k="T" aria-pressed="true">TEXT</button><button class="chip cG" data-k="G" aria-pressed="true">GUIDE</button><button class="chip cI" data-k="I" aria-pressed="true">INFERENCE</button><button class="chip cC" data-k="C" aria-pressed="true">CHECK</button><button class="chip cV" data-k="V" aria-pressed="true">VIDEO</button><button class="act" id="all">Open all</button></div></div>
 <main>
-<section id="lxTop" hidden><h2 class="sh">Latest lessons <small>new videos from the group leaders</small></h2><div class="lx-strip" id="lxStrip" role="list" aria-label="Latest video lessons"></div><ol class="tl" id="lxGeneral"></ol></section>
+<section id="lxTop" hidden><h2 class="sh">Latest lessons <small>new videos from the Admins</small></h2><div class="lx-strip" id="lxStrip" role="list" aria-label="Latest video lessons"></div><ol class="tl" id="lxGeneral"></ol></section>
 <!-- [drive-resources] PDFs, pictures and links from the group leaders (js/resources.js) -->
-<section id="rsTop" hidden><h2 class="sh">Resources <small>PDFs, charts, pictures and links from the group leaders</small></h2><div class="rs-strip" id="rsStrip" role="list" aria-label="Resources"></div></section>
+<section id="rsTop" hidden><h2 class="sh">Resources <small>PDFs, charts, pictures and links from the Admins</small></h2><div class="rs-strip" id="rsStrip" role="list" aria-label="Resources"></div></section>
 
 <div id="tlHost"><!-- [teacher-notes-fix] the teacher timeline (with CHECK / FLAG / INFERENCE notes) is no longer in this public file. It is loaded from the admin-only table public.teacher_content after a group leader signs in (js/timeline.js). --></div>
 <section id="sheetMore" hidden><h2 class="sh">More videos <small>added to the study group’s video list</small></h2><ol class="tl" id="sheetList"></ol></section>
@@ -186,7 +186,7 @@ footer .n{font-family:var(--sans);font-size:12.5px;color:#777;margin-top:6px}
   <label class="switch" id="notifyBox" hidden><input type="checkbox" id="notify"> Email me when a new video is added</label>
   <p class="days" id="accessLine" hidden></p>
   <p>Signed in as <span id="whoami"></span> · <button class="lk" id="signOut" type="button">Sign out</button></p>
-  <p><a href="simple.html">Member view (what members see)</a><span id="adminWrap" hidden> · <a id="adminLink" href="admin.html">Group leader view →</a></span></p>
+  <p><a href="simple.html">Member view (what members see)</a><span id="adminWrap" hidden> · <a id="adminLink" href="admin.html">Admin view →</a></span></p>
   <details class="track">
     <summary>What this site records</summary>
     <div class="in"><p>Your email address; the referral link you first arrived with (so partner ministries can be thanked); when you visit; which timeline markers you open; when you start a video and how far you get (25%, 50%, 75%, finished); when you open “Study notes” on the member view. It’s used only by Sam and Ben to see how this study group is going. It isn’t sold or shared.

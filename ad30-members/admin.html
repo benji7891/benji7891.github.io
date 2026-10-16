@@ -5,16 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0e1116">
-<title>Group leader view · The Thirtieth Year</title>
+<title>Admin view · The Thirtieth Year</title>
 <link rel="icon" type="image/png" sizes="192x192" href="../ad30-simple/icon-192.png">
 <link rel="stylesheet" href="css/members.css">
 <link rel="stylesheet" href="css/lessons.css">
 <link rel="stylesheet" href="css/resources.css">
+<style>/* [admin-combined] the old add-forms only open when Edit is tapped */
+#lxAdmin:has(#lxCancel[hidden]) > #lxH, #lxAdmin:has(#lxCancel[hidden]) > .lx-tip, #lxAdmin:has(#lxCancel[hidden]) #lxForm,
+#rsAdmin:has(#rsCancel[hidden]) > #rsH, #rsAdmin:has(#rsCancel[hidden]) > .lx-tip, #rsAdmin:has(#rsCancel[hidden]) #rsForm { display:none }
+.cb-admin .btn { width:100%; margin-top:16px }
+</style>
 </head>
 <body class="admin">
 
 <main class="gate" id="gate">
-  <h1 class="serif">Group leader view</h1>
+  <h1 class="serif">Admin view</h1>
   <p class="lead">Sign in with your admin email.</p>
   <form id="gForm" novalidate>
     <label for="gEmail">Your email</label>
@@ -36,12 +41,43 @@
 
 <div class="wrap" id="page" hidden>
   <div class="topbar">
-    <h1 class="serif" style="font-size:32px">Group leader view</h1>
+    <h1 class="serif" style="font-size:32px">Admin view</h1>
     <p class="small" style="color:var(--muted);margin:0"><span id="whoami"></span> · <a href="./">Site</a> · <button class="linkbtn" id="signOut" type="button" style="margin:0;padding:0 6px">Sign out</button></p>
   </div>
   <p class="msg err" id="notAdmin" hidden>You’re signed in, but this email isn’t on the admin list.</p>
 
   <div id="adminBody" hidden>
+    <!-- ===== [admin-combined] ONE simple form: video and/or PDF (js/combined-admin.js) ===== -->
+    <section class="lx-admin cb-admin" id="cbAdmin" aria-labelledby="cbH" hidden>
+      <h2 class="serif" id="cbH">Add a lesson</h2>
+      <p class="lx-tip">Add a video, a PDF, or both. Members see it on the site right away.</p>
+      <form id="cbForm" novalidate autocomplete="off">
+        <label class="lx-l" for="cbTitle">Title</label>
+        <input class="field" id="cbTitle" maxlength="200" placeholder="e.g. Red Letter 10.1 The Door of the Sheep" enterkeyhint="next">
+
+        <label class="lx-l" for="cbUrl">Video link <small>(optional)</small></label>
+        <input class="field" id="cbUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://drive.google.com/file/d/…" enterkeyhint="next">
+        <p class="lx-help" id="cbUrlMsg" aria-live="polite"></p>
+
+        <fieldset class="rs-mode cb-pdf"><legend class="lx-l">PDF <small>(optional)</small></legend>
+          <label class="rs-opt"><input type="radio" name="cbPdfMode" value="file" checked> Upload a file</label>
+          <label class="rs-opt"><input type="radio" name="cbPdfMode" value="link"> Paste a link</label>
+        </fieldset>
+        <div id="cbFileBox"><input class="field rs-file" id="cbFile" type="file" aria-label="PDF file" accept="application/pdf,image/png,image/jpeg,image/webp,.pdf,.png,.jpg,.jpeg,.webp"></div>
+        <div id="cbLinkBox" hidden><input class="field" id="cbPdfUrl" type="url" aria-label="PDF link" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…"></div>
+        <p class="lx-help" id="cbPdfMsg" aria-live="polite"></p>
+
+        <label class="lx-l" for="cbNote">Note <small>(optional)</small></label>
+        <textarea class="field" id="cbNote" rows="3" maxlength="2000" placeholder="A sentence or two for members."></textarea>
+
+        <label class="lx-l" for="cbMarker">Timeline spot</label>
+        <select class="field" id="cbMarker"><option value="">General (top of page)</option></select>
+
+        <button class="btn" id="cbSave" type="submit">Save</button>
+        <p class="msg" id="cbMsg" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
     <!-- ===== Add a lesson (js/lessons-admin.js; database table public.lessons) ===== -->
     <section class="lx-admin" id="lxAdmin" aria-labelledby="lxH" hidden>
       <h2 class="serif" id="lxH">Add a lesson</h2>
@@ -85,7 +121,7 @@
         <p class="lx-mail">✉️ <b>Email alerts start once email is set up.</b> Until then nobody gets an email when you add a lesson — members see it on the site with a <b>NEW</b> badge, so you may want to text the group.</p>
       </form>
 
-      <h3 class="serif">Lessons on the site</h3>
+      <h3 class="serif">Videos on the site</h3>
       <p class="hint" id="lxListMsg"></p>
       <ul class="lx-items" id="lxItems"></ul>
     </section>
@@ -95,13 +131,14 @@
       <h2 class="serif" id="rsH">Add a resource</h2>
       <p class="lx-tip">Share a PDF, a timeline chart or other picture, or a link. Members see it under <b>Resources</b>, and inside the section you pick.</p>
       <form id="rsForm" novalidate autocomplete="off">
-        <fieldset class="rs-mode"><legend class="lx-l">What are you adding?</legend>
+        <fieldset class="rs-mode" id="rsModeBox"><legend class="lx-l">What are you adding?</legend>
           <label class="rs-opt"><input type="radio" name="rsMode" value="file" checked> A file (PDF or picture)</label>
           <label class="rs-opt"><input type="radio" name="rsMode" value="link"> A link</label>
         </fieldset>
         <div id="rsFileBox">
           <label class="lx-l" for="rsFile">File</label>
           <input class="field rs-file" id="rsFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,.pdf,.png,.jpg,.jpeg,.webp">
+          <p class="lx-help" id="rsKeepMsg" hidden>Leave this empty to keep the current file, or choose a new one to replace it.</p>
           <p class="lx-help" id="rsFileMsg" aria-live="polite">PDF, PNG, JPG or WebP, up to 45 MB.</p>
           <div class="rs-fprev" id="rsFPrev" hidden><img id="rsFPrevImg" alt="The picture you chose"><p id="rsFPrevTxt"></p></div>
         </div>
@@ -116,7 +153,7 @@
 
         <label class="lx-l" for="rsNote">Your note <small>(optional)</small></label>
         <textarea class="field" id="rsNote" rows="4" maxlength="5000" placeholder="A sentence or two: what it is and why it helps."></textarea>
-        <p class="lx-help">This is <b>your note as group leader — not Scripture</b>. Members see it under the label <b>LEADER’S NOTE</b>, kept separate from the Bible text.</p>
+        <p class="lx-help">This is <b>your note as Admin — not Scripture</b>. Members see it under the label <b>ADMIN’S NOTE</b>, kept separate from the Bible text.</p>
 
         <label class="lx-l" for="rsMarker">Where on the timeline <small>(optional)</small></label>
         <select class="field" id="rsMarker"><option value="">General (Resources list only)</option></select>
@@ -124,10 +161,11 @@
 
         <p class="rs-type" id="rsType" aria-live="polite"></p>
         <button class="btn" id="rsSave" type="submit">Upload and add</button>
+        <button class="linkbtn lx-cancel" id="rsCancel" type="button" hidden>Cancel editing</button>
         <p class="msg" id="rsMsg" role="status" aria-live="polite"></p>
       </form>
 
-      <h3 class="serif">Resources on the site</h3>
+      <h3 class="serif">PDFs &amp; resources on the site</h3>
       <p class="hint" id="rsListMsg"></p>
       <ul class="lx-items" id="rsItems"></ul>
     </section>
@@ -206,6 +244,7 @@
 <script src="js/lessons-admin.js"></script>
 <script src="js/resources.js"></script>
 <script src="js/resources-admin.js"></script>
+<script src="js/combined-admin.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
