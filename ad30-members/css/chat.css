@@ -1,0 +1,85 @@
+/* AD30 members - private chat with the Admins (js/chat.js)                              [chat, new file] */
+/* member: floating button */
+.ch-fab{position:fixed; z-index:25; right:calc(14px + env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom));
+  display:inline-flex; align-items:center; gap:8px; min-height:52px; padding:0 18px; border-radius:26px;
+  border:1px solid var(--gold,#d9b870); background:#1d222b; color:var(--text,#ece8df); font:inherit; font-size:16px;
+  box-shadow:0 6px 22px rgba(0,0,0,.45); cursor:pointer; text-decoration:none; -webkit-tap-highlight-color:transparent}
+.ch-fab[hidden]{display:none}
+.ch-fab:active{background:var(--gold-soft,rgba(217,184,112,.14))}
+.ch-fab:focus-visible{outline:2px solid var(--gold,#d9b870); outline-offset:3px}
+.ch-fab.ch-has-new{background:var(--gold,#d9b870); color:#1a1507; font-weight:600}
+.ch-fab-ic{font-size:18px; line-height:1}
+.ch-badge{display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:11px;
+  background:#e0533d; color:#fff; font:700 12px/1 system-ui,sans-serif}
+.ch-badge[hidden]{display:none}
+footer{padding-bottom:70px}   /* room so the button never covers "Sign out" */
+
+/* member: chat panel (full screen on phones, a side panel on wide screens) */
+.ch-panel{position:fixed; z-index:35; inset:0; display:flex; flex-direction:column; background:var(--bg,#0e1116);
+  padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.ch-panel[hidden]{display:none}
+html.ch-open, html.ch-open body{overflow:hidden}
+@media (min-width:760px){
+  .ch-panel{left:auto; width:420px; border-left:1px solid var(--line,#2a303a); box-shadow:-10px 0 40px rgba(0,0,0,.5)}
+  html.ch-open, html.ch-open body{overflow:auto}
+}
+.ch-bar{display:flex; align-items:center; gap:12px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  border-bottom:1px solid var(--line,#2a303a); background:var(--panel,#171b22)}
+.ch-bar-in{padding:8px 0 12px; background:none; margin-bottom:6px}
+.ch-x{min-height:48px; min-width:48px; padding:0 14px; border-radius:14px; border:1px solid var(--line,#2a303a);
+  background:#1d222b; color:var(--text,#ece8df); font:inherit; font-size:16px; cursor:pointer; white-space:nowrap; flex:0 0 auto}
+.ch-x:focus-visible{outline:2px solid var(--gold,#d9b870); outline-offset:2px}
+.ch-title{display:flex; flex-direction:column; min-width:0}
+.ch-title b{font-size:19px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ch-title span{font-size:13px; color:var(--muted,#9a9fa8)}
+.ch-example{margin:10px 14px 0; padding:8px 12px; border:1px dashed #e0a43d; border-radius:10px; color:#f3c46b;
+  font:700 12px/1.4 system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; text-align:center}
+.ch-admin .ch-example{margin:10px 0 0}
+.ch-note{margin:10px 14px 0; font-size:13px; color:var(--muted,#9a9fa8); text-align:center}
+.ch-state{margin:6px 14px 0; font-size:12px; color:var(--muted,#9a9fa8); text-align:center}
+.ch-state:empty{display:none}
+.ch-state.ch-live{color:#7fc79a; text-align:left; margin-left:0}
+
+/* conversation (shared) */
+.ch-conv{flex:1 1 auto; display:flex; flex-direction:column; min-height:0}
+.ch-msgs{list-style:none; margin:0; padding:12px 14px 6px; flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain}
+.ch-day{margin:14px 0 8px; text-align:center; font-size:12px; color:var(--muted,#9a9fa8); text-transform:uppercase; letter-spacing:.12em}
+.ch-m{max-width:86%; margin:0 0 10px; padding:9px 13px 10px; border-radius:16px; border:1px solid var(--line,#2a303a); background:var(--panel,#171b22)}
+.ch-m.ch-mine{margin-left:auto; background:#2a2516; border-color:rgba(217,184,112,.45); border-bottom-right-radius:6px}
+.ch-m.ch-theirs{margin-right:auto; border-bottom-left-radius:6px}
+.ch-meta{margin:0 0 3px; font-size:12px; color:var(--muted,#9a9fa8)}
+.ch-meta b{font-weight:600; color:var(--text,#ece8df)}
+.ch-m.ch-admin .ch-meta b{color:var(--gold,#d9b870)}
+.ch-body{margin:0; font-size:17px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere}
+.ch-empty{margin:24px 14px; text-align:center; color:var(--muted,#9a9fa8); font-size:15px}
+.ch-empty[hidden]{display:none}
+.ch-err{margin:6px 14px 0}
+.ch-err[hidden]{display:none}
+.ch-form{display:flex; gap:8px; align-items:flex-end; padding:10px 14px; border-top:1px solid var(--line,#2a303a); background:var(--panel,#171b22)}
+.ch-form .ch-input{flex:1 1 auto; min-width:0; min-height:52px; max-height:160px; padding:12px 14px; line-height:1.4; resize:none; font-size:17px}
+.ch-form .ch-send{flex:0 0 auto; width:auto; min-width:84px; min-height:52px; margin:0; padding:0 16px; font-size:17px}
+.ch-count{margin:0 14px 6px; font-size:12px; color:var(--muted,#9a9fa8); text-align:right}
+.ch-count:empty{display:none}
+
+/* admin: inbox + thread (inside the Admin page, uses the .lx-admin card look) */
+.ch-admin{max-width:640px}
+.ch-admin textarea.field.ch-input{min-height:52px; height:auto; resize:none}
+.ch-inbox{list-style:none; margin:12px 0 0; padding:0}
+.ch-inbox[hidden]{display:none}
+.ch-inbox li + li{border-top:1px solid var(--line,#2a303a)}
+.ch-row{display:block; width:100%; text-align:left; background:none; border:0; color:inherit; font:inherit; padding:12px 6px; cursor:pointer; border-radius:12px}
+.ch-row:active, .ch-row:hover{background:var(--gold-soft,rgba(217,184,112,.14))}
+.ch-row-top, .ch-row-bot{display:flex; align-items:center; gap:10px}
+.ch-row-bot{margin-top:3px}
+.ch-who{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:16px}
+.ch-when{flex:0 0 auto; font-size:13px; color:var(--muted,#9a9fa8)}
+.ch-prev{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; color:var(--muted,#9a9fa8)}
+.ch-unread .ch-who{font-weight:700}
+.ch-unread .ch-who::before{content:""; display:inline-block; width:9px; height:9px; margin-right:8px; border-radius:50%; background:var(--gold,#d9b870); vertical-align:1px}
+.ch-unread .ch-prev{color:var(--text,#ece8df)}
+.ch-tag{flex:0 0 auto; font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line,#2a303a); color:var(--muted,#9a9fa8)}
+.ch-thread[hidden]{display:none}
+.ch-thread .ch-msgs{max-height:60vh; padding:6px 0; border-top:1px solid var(--line,#2a303a)}
+.ch-thread .ch-form{margin:0 -18px -22px; border-radius:0 0 20px 20px; padding:12px 18px 16px}
+.ch-thread .ch-empty, .ch-thread .ch-err, .ch-thread .ch-count{margin-left:0; margin-right:0}
+@media (max-width:420px){ .ch-thread .ch-form{margin:0 -14px -20px; padding:12px 14px 14px} }

@@ -10,6 +10,8 @@
 <link rel="stylesheet" href="css/members.css">
 <link rel="stylesheet" href="css/lessons.css">
 <link rel="stylesheet" href="css/resources.css">
+<!-- [chat] private chat with the Admins -->
+<link rel="stylesheet" href="css/chat.css">
 <style>/* [admin-combined] the old add-forms only open when Edit is tapped */
 #lxAdmin:has(#lxCancel[hidden]) > #lxH, #lxAdmin:has(#lxCancel[hidden]) > .lx-tip, #lxAdmin:has(#lxCancel[hidden]) #lxForm,
 #rsAdmin:has(#rsCancel[hidden]) > #rsH, #rsAdmin:has(#rsCancel[hidden]) > .lx-tip, #rsAdmin:has(#rsCancel[hidden]) #rsForm { display:none }
@@ -246,5 +248,7 @@
 <script src="js/resources-admin.js"></script>
 <script src="js/combined-admin.js"></script>
 <script src="js/admin.js"></script>
+<!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->
+<script src="js/chat.js"></script>
 </body>
 </html>
