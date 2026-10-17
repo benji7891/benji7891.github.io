@@ -190,7 +190,7 @@
       if (more > 0) h += '<p class="sx-moreverses">' + more + ' more verse' + (more > 1 ? 's' : '') + ' in the study notes.</p>';
       h += '</div>';
     }
-    h += '<button class="sx-notes" type="button">Study notes</button>';
+    h += '<button class="sx-notes" type="button">Section notes: ' + esc(s.title) + '</button>';   // [layout-v2] the section's notes; each lesson has its own "Study notes" button
     h += '<div class="sx-row"><button class="sx-link sx-share" type="button">Share</button>';
     if (i + 1 < SECTIONS.length) h += '<button class="sx-link sx-next" type="button">Next: <span></span> ›</button>';
     h += '</div>';

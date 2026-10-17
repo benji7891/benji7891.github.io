@@ -47,6 +47,7 @@
     return null;
   };
   L.MEMBER_MAP = EXTRA;
+  L.memberLessons = function () { return ROWS || []; };   // [studynote-fix] read by js/resources.js (which file belongs to which lesson)
   function byOrder(a, b) {
     var x = a.sort_order == null ? 1e9 : a.sort_order, y = b.sort_order == null ? 1e9 : b.sort_order;
     return x - y || String(a.created_at).localeCompare(String(b.created_at));
@@ -101,12 +102,15 @@
       '<div class="lx-media lxm-media"><button type="button" class="lx-thumb" aria-label="Play video: ' + esc(row.title) + '">' +
         '<img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>' +
       (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the Admin — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
-      versesBox(row.verse_refs, false);
+      versesBox(row.verse_refs, false) +
+      // [studynote-fix] the lesson's own study guide (PDF / Drive link) goes right here, filled by js/resources.js
+      '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"></div>';
     el.querySelector(".lx-thumb").addEventListener("click", function () {
       L.player(el.querySelector(".lxm-media"), row);
       AD30.track("card_open", { marker_id: row.marker_id || "lessons", video_id: id, video_title: String(row.title).slice(0, 200) });
     });
     fillVerses(el.querySelector(".lxm-verses[data-refs]"));
+    if (R() && R().guides) try { R().guides(el); } catch (e) {}   // [studynote-fix]
     return el;
   }
   function sectionBox(secId) {
@@ -163,14 +167,17 @@
     btn.setAttribute("aria-expanded", "true"); li.classList.add("open");
     return panel;
   }
+  // [layout-v2] "More lessons" (below the timeline): only General lessons (no timeline spot). Lessons with a spot
+  // live inside their section, each with its own Study notes button under it.
   function renderLatest() {
     var sec = $("lxSimple"), list = $("lxList"), all = $("lxAll"); if (!sec || !list) return;
     list.innerHTML = "";
-    if (!ROWS || !ROWS.length) { sec.hidden = true; return; }
-    ROWS.forEach(function (row, i) { var li = latestRow(row); if (i >= LATEST_SHOWN) li.hidden = true; list.appendChild(li); });
+    var gen = (ROWS || []).filter(function (r) { return !L.sectionFor(r.marker_id); });
+    if (!gen.length) { sec.hidden = true; return; }
+    gen.forEach(function (row, i) { var li = latestRow(row); if (i >= LATEST_SHOWN) li.hidden = true; list.appendChild(li); });
     if (all) {
-      all.hidden = ROWS.length <= LATEST_SHOWN;
-      all.textContent = "Show all lessons (" + ROWS.length + ")";
+      all.hidden = gen.length <= LATEST_SHOWN;
+      all.textContent = "Show all lessons (" + gen.length + ")";
       all.onclick = function () { [].forEach.call(list.children, function (li) { li.hidden = false; }); all.hidden = true; };
     }
     sec.hidden = false;

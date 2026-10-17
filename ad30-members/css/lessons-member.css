@@ -78,3 +78,20 @@
   .lxn-t{break-after:avoid; page-break-after:avoid}
   html:not(.notes-open) .lxm-top, html:not(.notes-open) .lxm{display:none !important}
 }
+
+/* [layout-v2] a lesson's own "Study notes" (its PDF / Drive link), at the bottom of the lesson; opens in a new tab */
+.lxm-guide{margin:18px 0 0}
+.lxm-guide[hidden]{display:none}
+.lxm-guide-a{display:flex; align-items:center; gap:12px; min-height:60px; padding:10px 18px; border-radius:16px;
+  border:1px solid var(--gold,#d9b870); background:var(--gold,#d9b870); color:#1a1507; text-decoration:none}
+.lxm-guide-a + .lxm-guide-a{margin-top:10px}
+.lxm-guide-a:focus-visible{outline:3px solid var(--gold,#d9b870); outline-offset:3px}
+.lxm-guide-ic{font-size:22px; line-height:1}
+.lxm-guide-t{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
+.lxm-guide-t b{font-size:20px; font-weight:600}
+.lxm-guide-t small{font-size:13px; color:#3b3020; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lxm-guide-a:focus-visible{outline:3px solid var(--text,#ece8df)}
+/* [layout-v2] the section's own notes button: outlined, so it isn't mistaken for a lesson's Study notes */
+.sx-item .sx-notes{background:transparent; color:var(--gold,#d9b870); font-size:17px; font-weight:500; min-height:52px}
+/* [layout-v2] "More lessons" now sits below the timeline */
+#lxSimple.lxm-top{margin-top:52px}

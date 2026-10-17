@@ -25,6 +25,15 @@
 <!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
 <link rel="stylesheet" href="css/gtc-layout.css">
 <link rel="stylesheet" href="css/prophetic-clock.css">
+<!-- [layout-v2] God's Time Clock: Admins only. js/simple.js adds html.is-leader for Admins (same check as the Teacher view link).
+     Members: no clock column, the page is one centred column. (This only hides it on the page; it is not security.) -->
+<style>
+html:not(.is-leader) .gtc-rail{display:none !important}
+@media (min-width:900px){
+  html:not(.is-leader) .gtc-shell{display:block; padding:0}
+  html:not(.is-leader) .gtc-shell > .wrap{margin:0 auto}
+}
+</style>
 <!-- [chat] private chat with the Admins -->
 <link rel="stylesheet" href="css/chat.css">
 </head>
@@ -86,10 +95,14 @@
 
   <!-- 10 Nisan countdown: Teacher view only (removed from member view Oct 4, 2026) -->
 
-  <!-- [lessons-merge] video lessons: "Latest lessons" (filled by js/lessons-member.js; lessons also appear inside their section) -->
+  <!-- [simple-rework] the sections: tap a title to open it (built by js/simple.js from js/simple-data.js) -->
+  <p class="sx-hint">Tap a title to open it.</p>
+  <ol class="sx-list" id="sxList" aria-label="Study sections"></ol>
+  <!-- [layout-v2] "More lessons": only lessons with no timeline spot (General). Lessons with a spot are inside their section above.
+       The box keeps its old id (#lxSimple) because js/simple.js uses it to start the lessons. -->
   <section class="lxm-top" id="lxSimple" aria-labelledby="lxSimpleH" hidden>
-    <h2 class="lxm-h serif" id="lxSimpleH">Latest lessons</h2>
-    <p class="lxm-sub">New videos from the Admins</p>
+    <h2 class="lxm-h serif" id="lxSimpleH">More lessons</h2>
+    <p class="lxm-sub">Lessons from the Admins that aren’t tied to one date</p>
     <ul class="lxm-list" id="lxList"></ul>
     <button class="lxm-all" id="lxAll" type="button" hidden></button>
   </section>
@@ -102,9 +115,6 @@
     <button class="lxm-all" id="rsAll" type="button" hidden></button>
   </section>
 
-  <!-- [simple-rework] the sections: tap a title to open it (built by js/simple.js from js/simple-data.js) -->
-  <p class="sx-hint">Tap a title to open it.</p>
-  <ol class="sx-list" id="sxList" aria-label="Study sections"></ol>
   <p class="status" id="vidStatus" role="status" aria-live="polite"></p>
 
   <footer>

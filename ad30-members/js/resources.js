@@ -159,8 +159,47 @@
   function secFor(r) { return L && L.sectionFor ? L.sectionFor(r.marker_id) : null; }
   function secTitle(id) { var S = sections(); for (var i = 0; i < S.length; i++) if (S[i].id === id) return String(S[i].title || "").replace(/^[“"]|[”"]$/g, ""); return ""; }
   function forSection(id) { return (ROWS || []).filter(function (r) { return secFor(r) === id; }).sort(byOrder); }
+  /* [studynote-fix/layout-v2] A lesson's own study notes file: same timeline spot AND (same title, one title starting with
+     the other, or saved within 30 minutes of the lesson - the combined "Add a lesson" form saves both together).
+     A General lesson (no spot): a General file with the same title. */
+  function norm(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+  function guideOf(r, m, t, c) {
+    if (!r) return false;
+    var a = norm(r.title), b = norm(t), same = !!(a && b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0));
+    if (!m) return !r.marker_id && same;          // [layout-v2] General lesson: a General file with the same title
+    if (r.marker_id !== m) return false;
+    if (same) return true;
+    var d = Math.abs(Date.parse(r.created_at) - Date.parse(c));
+    return !isNaN(d) && d <= 30 * 60e3;
+  }
+  function isLessonGuide(r) {
+    var ls = (L && L.memberLessons && L.memberLessons()) || [];
+    for (var i = 0; i < ls.length; i++) if (guideOf(r, ls[i].marker_id, ls[i].title, ls[i].created_at)) return true;
+    return false;
+  }
+  function guideLabel(r) {
+    if (r.kind === "pdf") return "PDF";
+    if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
+    return r.kind === "image" ? "picture" : "link";
+  }
+  function fillGuides(scope) {
+    if (!ROWS) return;
+    [].forEach.call((scope || document).querySelectorAll(".lxm-guide[data-lxg-m]"), function (box) {
+      if (box._rsDone) return;
+      var m = box.getAttribute("data-lxg-m"), t = box.getAttribute("data-lxg-t"), c = box.getAttribute("data-lxg-c");
+      var hits = ROWS.filter(function (r) { return guideOf(r, m, t, c); }).sort(byOrder);
+      if (!hits.length) return;
+      box._rsDone = true; box.hidden = false;
+      box.innerHTML = hits.map(function (r) {
+        var h = R.href(r);
+        return '<a class="lxm-guide-a" data-rsf="' + esc(r.id) + '"' + (h ? ' href="' + esc(h) + '"' : "") + ' target="_blank" rel="noopener noreferrer">' +
+          '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>Study notes</b>' +
+          '<small>' + esc(r.title) + " · " + esc(guideLabel(r)) + '</small></span><span aria-hidden="true">↗</span></a>';
+      }).join("");
+    });
+  }
   function sectionBox(s) {
-    var rows = forSection(s.id); if (!rows.length) return null;
+    var rows = forSection(s.id).filter(function (r) { return !isLessonGuide(r); }); if (!rows.length) return null;   // [studynote-fix] guides sit under their lesson
     var box = document.createElement("div"); box.className = "rsm"; box.setAttribute("data-sec", s.id);
     box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Resources" : "Resource") + " <small>from the Admins</small></h3>";
     rows.forEach(function (r) { box.appendChild(R.item(r, { id: "rsm-" + r.id, where: "Added " + dateLabel(r.created_at) })); });
@@ -222,13 +261,15 @@
           var anchor = keepPlace();
           renderShelf(); decorate();
           sections().forEach(function (s) { var li = $("s-" + s.id), inner = li && li.querySelector(".sx-in"); if (inner && inner.firstChild) injectPanel(s, inner); });
+          fillGuides(document);   // [studynote-fix]
           anchor();
         } catch (e) { if (window.console) console.warn("[resources]", e); }
         return x[0];
       });
       return loading;
     },
-    panel: function (s, el) { if (ROWS) injectPanel(s, el); },
+    panel: function (s, el) { if (ROWS) { injectPanel(s, el); fillGuides(el); } },
+    guides: fillGuides,   // [studynote-fix] called by js/lessons-member.js for each lesson it draws
     decorate: decorate,
     // Study notes / print: titles and the leader's notes only (not the files)
     notes: function (s) {
