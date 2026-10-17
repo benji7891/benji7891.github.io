@@ -25,13 +25,13 @@
 <!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
 <link rel="stylesheet" href="css/gtc-layout.css">
 <link rel="stylesheet" href="css/prophetic-clock.css">
-<!-- [layout-v2] God's Time Clock: Admins only. js/simple.js adds html.is-leader for Admins (same check as the Teacher view link).
-     Members: no clock column, the page is one centred column. (This only hides it on the page; it is not security.) -->
+<!-- [clock-off] God's Time Clock is not shown on the member page for anyone (Admins too).
+     It stays on the Teacher view (index.html) and the Admin pages. The page is one centred column. -->
 <style>
-html:not(.is-leader) .gtc-rail{display:none !important}
+.gtc-rail{display:none !important}
 @media (min-width:900px){
-  html:not(.is-leader) .gtc-shell{display:block; padding:0}
-  html:not(.is-leader) .gtc-shell > .wrap{margin:0 auto}
+  .gtc-shell{display:block; padding:0}
+  .gtc-shell > .wrap{margin:0 auto}
 }
 </style>
 <!-- [chat] private chat with the Admins -->
