@@ -21,7 +21,7 @@
   function label(id) { if (!id) return MORE; var m = L.marker(id); return m ? L.markerLabel(m) : "Timeline spot “" + id + "”"; }
   function notesFor(lesson) {
     if (!R || !R.lessonGuidesOf) return [];
-    try { return R.lessonGuidesOf(resRows(), lesson); } catch (e) { return []; }
+    try { return R.lessonGuidesOf(resRows(), lesson, lessonRows()); } catch (e) { return []; }   // [notes-match-fix] same strict rule as the member page
   }
 
   /* ---------- saving ---------- */

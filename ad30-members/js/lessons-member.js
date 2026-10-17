@@ -116,7 +116,7 @@
       (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the Admin — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
       versesBox(row.verse_refs, false) +
       // [studynote-fix] the lesson's own study guide (PDF / Drive link) goes right here, filled by js/resources.js
-      '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"' + (feat ? ' data-lxg-f="1"' : "") + '></div>';
+      '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"' + (feat ? ' data-lxg-f="1"' : "") + ' data-lxg-id="' + esc(row.id != null ? row.id : "") + '"></div>';
     el.querySelector(".lx-thumb").addEventListener("click", function () {
       L.player(el.querySelector(".lxm-media"), row);
       AD30.track("card_open", { marker_id: row.marker_id || "lessons", video_id: id, video_title: String(row.title).slice(0, 200) });

@@ -159,32 +159,75 @@
   function secFor(r) { return L && L.sectionFor ? L.sectionFor(r.marker_id) : null; }
   function secTitle(id) { var S = sections(); for (var i = 0; i < S.length; i++) if (S[i].id === id) return String(S[i].title || "").replace(/^[“"]|[”"]$/g, ""); return ""; }
   function forSection(id) { return (ROWS || []).filter(function (r) { return secFor(r) === id; }).sort(byOrder); }
-  /* [studynote-fix/layout-v2] A lesson's own study notes file: same timeline spot AND (same title, one title starting with
-     the other, or saved within 30 minutes of the lesson - the combined "Add a lesson" form saves both together).
-     A General lesson (no spot): a General file with the same title. */
-  function norm(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
-  function guideOf(r, m, t, c) {
-    if (!r) return false;
-    var a = norm(r.title), b = norm(t), same = !!(a && b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0));
-    if (!m) return !r.marker_id && same;          // [layout-v2] General lesson: a General file with the same title
-    if (r.marker_id !== m) return false;
-    if (same) return true;
-    var d = Math.abs(Date.parse(r.created_at) - Date.parse(c));
-    return !isNaN(d) && d <= 30 * 60e3;
+  /* [notes-match-fix] Which file is which lesson's Study notes. Each file belongs to AT MOST ONE lesson (the best match),
+     so a PDF matched to one lesson never shows under another, and is never listed again as a loose file.
+     A file matches a lesson when it is in the same place (same timeline spot; for a lesson with no spot: a file with no
+     spot) and - best first:
+       4  the same title, ignoring case, spaces and punctuation ("RedLetter 7.1a" = "Redletter 7.1A")
+          (3 = same title but the file was put on a different spot, or on none)
+       2  one title starts with the other ("Daniel 12" / "Daniel 12 study notes") AND the lesson codes are the same
+       1  saved within 30 minutes of the lesson at the same spot (the combined Add form) AND the lesson codes are the same
+       0.5 only for the "Start here" lesson, only if nothing else matched it: a file whose title or file name has the
+          featured words (e.g. thethirtiethyear_deeper_study_notes.pdf)
+     Lesson code = every number in the title with its trailing letter: "7.1a", "7.1b", "12", "2.1". Codes must be equal,
+     so 7.1a never matches 7.1b. (There is no lesson_id column on resources, so titles/spots are all we have.) */
+  function compact(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+  function codes(t) {
+    return (String(t || "").toLowerCase().match(/\d+(?:[.\-:]\d+)*[a-z]?(?![a-z0-9])/g) || [])
+      .map(function (c) { return c.replace(/[\-:]/g, "."); }).sort().join(",");
   }
-  // [timeline-v3] the files that show as one lesson's Study notes (same rule as the button: exact match first, then
-  // the featured lesson's looser match)
-  function lessonGuides(l) {
-    var hits = (ROWS || []).filter(function (r) { return guideOf(r, l.marker_id, l.title, l.created_at); });
-    if (!hits.length && L && L.featured && L.featured() === l) hits = featGuide(l.marker_id);
-    return hits;
+  function fileName(r) { return String(r.storage_path || r.url || "").split(/[?#]/)[0].split("/").pop(); }
+  function featTerms() {
+    var c = window.AD30_CONFIG ? window.AD30_CONFIG.FEATURED_LESSON : undefined;
+    if (c === undefined || c === null) c = ["30th year", "thirtieth"];
+    return [].concat(c).map(compact).filter(function (t) { return t.length >= 3; });
   }
-  function isLessonGuide(r) {
+  function featHas(text) { var x = compact(text); return !!x && featTerms().some(function (t) { return x.indexOf(t) >= 0; }); }
+  function score(r, l) {
+    if (!r || !l) return 0;
+    var rm = r.marker_id || "", lm = l.marker_id || "", samePlace = rm === lm;
+    var a = compact(r.title), b = compact(l.title);
+    if (a && a === b) return samePlace ? 4 : 3;
+    if (!samePlace) return 0;
+    var sameCodes = codes(r.title) === codes(l.title);
+    if (a && b && (a.indexOf(b) === 0 || b.indexOf(a) === 0) && sameCodes) return 2;
+    if (lm && sameCodes) { var d = Math.abs(Date.parse(r.created_at) - Date.parse(l.created_at)); if (!isNaN(d) && d <= 30 * 60e3) return 1; }
+    return 0;
+  }
+  // lessons: newest first (as fetched). featured: the "Start here" lesson or null. Returns { of: lessonKey -> [files], used: fileId -> lessonKey }
+  function lkey(l) { return String(l.id != null ? l.id : (l.marker_id || "") + "|" + l.title + "|" + l.created_at); }
+  function assign(files, lessons, featured) {
+    var of = {}, used = {};
+    (files || []).forEach(function (r) {
+      var best = null, bs = 0, bd = Infinity;
+      (lessons || []).forEach(function (l) {
+        var s = score(r, l); if (!s) return;
+        var d = Math.abs(Date.parse(r.created_at) - Date.parse(l.created_at)); if (isNaN(d)) d = 1e15;
+        if (s > bs || (s === bs && d < bd)) { best = l; bs = s; bd = d; }
+      });
+      if (best) { var k = lkey(best); (of[k] = of[k] || []).push(r); used[r.id] = k; }
+    });
+    if (featured && !of[lkey(featured)]) {
+      var c = (files || []).filter(function (r) { return !used[r.id] && (r.marker_id || "") === (featured.marker_id || "") && (featHas(r.title) || featHas(fileName(r))); });
+      c.sort(function (a, b) { return (b.kind === "pdf") - (a.kind === "pdf") || byOrder(a, b); });
+      if (c.length) { of[lkey(featured)] = [c[0]]; used[c[0].id] = lkey(featured); }
+    }
+    Object.keys(of).forEach(function (k) { of[k].sort(byOrder); });
+    return { of: of, used: used };
+  }
+  function memberAssign() {
     var ls = (L && L.memberLessons && L.memberLessons()) || [];
-    for (var i = 0; i < ls.length; i++) if (lessonGuides(ls[i]).indexOf(r) >= 0) return true;
-    return false;
+    return assign(ROWS || [], ls, (L && L.featured && L.featured()) || null);
   }
-  R.lessonGuidesOf = function (rows, l) { var keep = ROWS; ROWS = rows; try { return lessonGuides(l); } finally { ROWS = keep; } };   // admin: move a lesson's notes with it
+  function lessonGuides(l) { return memberAssign().of[lkey(l)] || []; }
+  function isLessonGuide(r) { return !!memberAssign().used[r.id]; }
+  // admin (js/timeline-placer.js): the files that move with a lesson. Same rule; the featured lesson = the newest one with the words.
+  R.lessonGuidesOf = function (files, l, lessons) {
+    lessons = lessons && lessons.length ? lessons : [l];
+    var feat = null; lessons.forEach(function (x) { if (!feat && featHas(x.title)) feat = x; });
+    return assign(files || [], lessons, feat).of[lkey(l)] || [];
+  };
+  R._match = { compact: compact, codes: codes, score: score, assign: assign };   // for tests
   // [timeline-v3] the separate Resources shelf is gone. A file that is NOT a lesson's Study notes still shows:
   //   at its timeline spot (inside the opened section), or - no spot / a spot not on the member page - in "More lessons".
   function inSpot(r) { return !!(r.marker_id && L && L.marker && L.marker(r.marker_id) && secFor(r)); }
@@ -213,25 +256,17 @@
     if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
     return r.kind === "image" ? "picture" : "link";
   }
-  /* [featured-30th] the featured lesson's Study notes when no file has the lesson's exact title: a file in the same
-     place (General, or the lesson's timeline spot) whose title or file name has the featured words, e.g.
-     "thethirtiethyear_deeper_study_notes.pdf". A PDF first; only one is shown. */
-  function fileName(r) { return String(r.storage_path || r.url || "").split(/[?#]/)[0].split("/").pop(); }
-  function featGuide(m) {
-    if (!L || !L.featHas) return [];
-    var c = ROWS.filter(function (r) { return (r.marker_id || "") === (m || "") && (L.featHas(r.title) || L.featHas(fileName(r))); });
-    c.sort(function (a, b) { return (b.kind === "pdf") - (a.kind === "pdf") || byOrder(a, b); });
-    return c.slice(0, 1);
-  }
+  // [notes-match-fix] the featured lesson's looser match is now part of assign() above
   function fillGuides(scope) {
-    if (!ROWS) return;
+    if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) return;
+    var A = memberAssign();
     [].forEach.call((scope || document).querySelectorAll(".lxm-guide[data-lxg-m]"), function (box) {
-      if (box._rsDone) return;
-      var m = box.getAttribute("data-lxg-m"), t = box.getAttribute("data-lxg-t"), c = box.getAttribute("data-lxg-c");
-      var hits = ROWS.filter(function (r) { return guideOf(r, m, t, c); }).sort(byOrder);
-      if (!hits.length && box.getAttribute("data-lxg-f")) hits = featGuide(m);   // [featured-30th]
-      if (!hits.length) return;
-      box._rsDone = true; box.hidden = false;
+      var id = box.getAttribute("data-lxg-id"), row = null;
+      if (id) ((L.memberLessons && L.memberLessons()) || []).forEach(function (l) { if (String(l.id) === id) row = l; });
+      var k = row ? lkey(row) : lkey({ marker_id: box.getAttribute("data-lxg-m"), title: box.getAttribute("data-lxg-t"), created_at: box.getAttribute("data-lxg-c") });
+      var hits = A.of[k] || [];
+      box._rsDone = true; box.hidden = !hits.length;   // [notes-match-fix] re-filled every time, so a file never sits under two lessons
+      if (!hits.length) { box.innerHTML = ""; return; }
       box.innerHTML = hits.map(function (r) {
         var h = R.href(r);
         return '<a class="lxm-guide-a" data-rsf="' + esc(r.id) + '"' + (h ? ' href="' + esc(h) + '"' : "") + ' target="_blank" rel="noopener noreferrer">' +
