@@ -172,10 +172,41 @@
     var d = Math.abs(Date.parse(r.created_at) - Date.parse(c));
     return !isNaN(d) && d <= 30 * 60e3;
   }
+  // [timeline-v3] the files that show as one lesson's Study notes (same rule as the button: exact match first, then
+  // the featured lesson's looser match)
+  function lessonGuides(l) {
+    var hits = (ROWS || []).filter(function (r) { return guideOf(r, l.marker_id, l.title, l.created_at); });
+    if (!hits.length && L && L.featured && L.featured() === l) hits = featGuide(l.marker_id);
+    return hits;
+  }
   function isLessonGuide(r) {
     var ls = (L && L.memberLessons && L.memberLessons()) || [];
-    for (var i = 0; i < ls.length; i++) if (guideOf(r, ls[i].marker_id, ls[i].title, ls[i].created_at)) return true;
+    for (var i = 0; i < ls.length; i++) if (lessonGuides(ls[i]).indexOf(r) >= 0) return true;
     return false;
+  }
+  R.lessonGuidesOf = function (rows, l) { var keep = ROWS; ROWS = rows; try { return lessonGuides(l); } finally { ROWS = keep; } };   // admin: move a lesson's notes with it
+  // [timeline-v3] the separate Resources shelf is gone. A file that is NOT a lesson's Study notes still shows:
+  //   at its timeline spot (inside the opened section), or - no spot / a spot not on the member page - in "More lessons".
+  function inSpot(r) { return !!(r.marker_id && L && L.marker && L.marker(r.marker_id) && secFor(r)); }
+  function fillSpotFiles(scope) {
+    if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) return;
+    [].forEach.call((scope || document).querySelectorAll("[data-spot-files]"), function (box) {
+      var id = box.getAttribute("data-spot-files"), list = ROWS.filter(function (r) { return r.marker_id === id && !isLessonGuide(r); }).sort(byOrder);
+      box.innerHTML = ""; box.hidden = !list.length;
+      list.forEach(function (r) { box.appendChild(R.item(r, { id: "rsm-" + r.id, where: "Added " + dateLabel(r.created_at) })); });
+      var sp = box.closest ? box.closest(".lxm-spot") : null, none = sp && sp.querySelector(".lxm-none");
+      if (none) none.hidden = !!list.length;
+      if (sp && list.length) sp.classList.remove("lxm-spot-empty");
+    });
+  }
+  function fillMoreFiles() {
+    var box = $("lxFiles"); if (!box) return;
+    if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) { box.hidden = true; return; }
+    var list = ROWS.filter(function (r) { return !inSpot(r) && !isLessonGuide(r); }).sort(byOrder);
+    box.innerHTML = list.length ? '<h3 class="lxm-h2">Files <small>from the Admins</small></h3>' : "";
+    list.forEach(function (r) { box.appendChild(R.item(r, { id: "rsx-" + r.id, where: "Added " + dateLabel(r.created_at) })); });
+    box.hidden = !list.length;
+    if (L.moreVis) L.moreVis();
   }
   function guideLabel(r) {
     if (r.kind === "pdf") return "PDF";
@@ -218,6 +249,8 @@
   }
   function injectPanel(s, el) {
     if (!el || s.extra || el.querySelector(".rsm")) return;
+    if (el.querySelector(".lxm-spots")) return;   // [timeline-v3] files now sit at their spot (js/lessons-member.js)
+    if (L && L.spotsFor && L.spotsFor(s.id).length) return;
     var box = sectionBox(s); if (!box) return;
     var before = el.querySelector(".sx-notes");
     if (before) el.insertBefore(box, before); else el.appendChild(box);
@@ -273,13 +306,15 @@
           renderShelf(); decorate();
           sections().forEach(function (s) { var li = $("s-" + s.id), inner = li && li.querySelector(".sx-in"); if (inner && inner.firstChild) injectPanel(s, inner); });
           fillGuides(document);   // [studynote-fix]
+          fillSpotFiles(document); fillMoreFiles();   // [timeline-v3]
           anchor();
         } catch (e) { if (window.console) console.warn("[resources]", e); }
         return x[0];
       });
       return loading;
     },
-    panel: function (s, el) { if (ROWS) { injectPanel(s, el); fillGuides(el); } },
+    panel: function (s, el) { if (ROWS) { injectPanel(s, el); fillGuides(el); fillSpotFiles(el); } },
+    spotFiles: fillSpotFiles, moreFiles: fillMoreFiles,   // [timeline-v3]
     guides: fillGuides,   // [studynote-fix] called by js/lessons-member.js for each lesson it draws
     decorate: decorate,
     // Study notes / print: titles and the leader's notes only (not the files)

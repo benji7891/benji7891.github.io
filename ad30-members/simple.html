@@ -110,18 +110,14 @@
        The box keeps its old id (#lxSimple) because js/simple.js uses it to start the lessons. -->
   <section class="lxm-top" id="lxSimple" aria-labelledby="lxSimpleH" hidden>
     <h2 class="lxm-h serif" id="lxSimpleH">More lessons</h2>
-    <p class="lxm-sub">Lessons from the Admins that aren’t tied to one date</p>
+    <p class="lxm-sub">Lessons and files from the Admins that aren’t tied to one date</p>
     <ul class="lxm-list" id="lxList"></ul>
     <button class="lxm-all" id="lxAll" type="button" hidden></button>
+    <div class="lxm-mfiles" id="lxFiles" hidden></div>
   </section>
 
-  <!-- [drive-resources] PDFs, pictures and links from the group leaders (js/resources.js) -->
-  <section class="lxm-top rsm-top" id="rsShelf" aria-labelledby="rsShelfH" hidden>
-    <h2 class="lxm-h serif" id="rsShelfH">Resources</h2>
-    <p class="lxm-sub">PDFs, charts, pictures and links from the Admins</p>
-    <ul class="rsm-list" id="rsList"></ul>
-    <button class="lxm-all" id="rsAll" type="button" hidden></button>
-  </section>
+  <!-- [timeline-v3] the separate Resources shelf is gone: each lesson's PDF is its Study notes button; any other file
+       shows at its timeline spot, or under More lessons. -->
 
   <p class="status" id="vidStatus" role="status" aria-live="polite"></p>
 

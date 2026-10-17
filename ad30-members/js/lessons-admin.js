@@ -225,7 +225,7 @@
     if (!rows.length) { if (!missing) ul.innerHTML = '<li class="lx-empty">No lessons yet — add the first one above.</li>'; return; }
     rows.forEach(function (r) {
       var li = document.createElement("li"), key = L.vkey(r), ok = !!key, src = L.src(r);
-      li.className = "lx-item" + (r.published ? "" : " hidden-l");
+      li.className = "lx-item" + (r.published ? "" : " hidden-l"); li.setAttribute("data-lid", r.id);   // [timeline-v3] js/timeline-placer.js
       li.innerHTML = '<div class="lx-item-top">' + (ok ? '<span class="lx-thumb"><img alt="" loading="lazy"' + L.thumbAttrs(r) + '></span>' : "") +
         '<div><p class="lx-item-t">' + esc(r.title) + "</p>" +
         '<p class="lx-item-m">' + (src === "drive" ? "Google Drive video · " : src === "youtube" ? "YouTube video · " : "") + esc(where(r.marker_id)) + "</p>" +

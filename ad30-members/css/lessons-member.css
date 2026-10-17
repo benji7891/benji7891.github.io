@@ -100,3 +100,21 @@
 .lxm-top.lxm-feat{margin:28px 0 40px}
 .lxm-feat .lxm-h{margin-bottom:14px}
 .lxm-feat .lxm-l{border:1px solid rgba(217,184,112,.55); border-radius:20px; padding:18px 18px 20px; background:rgba(217,184,112,.05)}
+
+/* [timeline-v3] an opened section: every timeline spot, grouped like the Admins' "Timeline spot" menu */
+.lxm-spots{margin-top:22px}
+.lxm-grp{margin:22px 0 6px; font:700 12px/1.4 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--gold,#d9b870)}
+.lxm-spot{position:relative; margin:0; padding:12px 0 12px 22px; border-left:2px solid rgba(217,184,112,.45)}
+.lxm-spot::before{content:""; position:absolute; left:-7px; top:18px; width:12px; height:12px; border-radius:50%; background:var(--gold,#d9b870)}
+.lxm-sd{margin:0; font-size:13px; color:var(--muted)}
+.lxm-st{margin:2px 0 0; font-size:19px; line-height:1.3; font-weight:500}
+.lxm-spot .lxm-l{margin-top:10px}
+.lxm-spot .lxm-files{margin-top:10px}
+.lxm-none{margin:4px 0 0; font-size:14px; color:var(--muted); font-style:italic}
+.lxm-none[hidden]{display:none}
+.lxm-spot-empty{padding-top:8px; padding-bottom:8px; opacity:.6}
+.lxm-spot-empty::before{background:transparent; border:2px solid rgba(217,184,112,.6); width:8px; height:8px; top:14px}
+.lxm-spot-empty .lxm-st{font-size:16px}
+.lxm-mfiles{margin-top:22px}
+.lxm-mfiles[hidden], .lxm-files[hidden]{display:none}
+.lxm-mfiles .rs-item + .rs-item, .lxm-files .rs-item + .rs-item{margin-top:12px}

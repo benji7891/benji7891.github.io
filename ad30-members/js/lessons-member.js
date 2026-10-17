@@ -48,6 +48,7 @@
   };
   L.MEMBER_MAP = EXTRA;
   L.memberLessons = function () { return ROWS || []; };
+  L.memberRow = function (id) { return rowById(id); };
   /* [featured-30th] "Start here" (#lxFeat): the newest lesson whose title contains one of these words (any case, spaces
      and punctuation ignored). Change it in js/config.js:  FEATURED_LESSON: ["30th year", "thirtieth"]  (a word or a list);
      FEATURED_LESSON: "" turns the box off. No match = nothing shown, the page is as before. */
@@ -124,17 +125,40 @@
     if (R() && R().guides) try { R().guides(el); } catch (e) {}   // [studynote-fix]
     return el;
   }
+  /* [timeline-v3] An opened section lists EVERY timeline spot that belongs to it (the same spots, titles and dates as the
+     Admins' "Timeline spot" menu), grouped under the menu's category headings, in timeline order. Each spot shows its
+     lessons (video + summary + verses + its own Study notes) and any other file placed there; a spot with nothing yet
+     says "No lesson yet" in light text, so the whole timeline is visible. */
+  function spotsFor(secId) { return (L.MARKERS || []).filter(function (m) { return L.sectionFor(m.id) === secId; }); }
+  L.spotsFor = spotsFor;
   function sectionBox(secId) {
-    var rows = lessonsFor(secId); if (!rows.length) return null;
-    var box = document.createElement("div"); box.className = "lxm"; box.setAttribute("data-sec", secId);
-    box.innerHTML = '<h3 class="lxm-h2">' + (rows.length > 1 ? "Video lessons" : "Video lesson") + ' <small>from the Admins</small></h3>';
-    rows.forEach(function (r) { box.appendChild(lessonBlock(r, "lxm-")); });
+    var spots = spotsFor(secId), rows = lessonsFor(secId); if (!spots.length && !rows.length) return null;
+    var box = document.createElement("div"); box.className = "lxm lxm-spots"; box.setAttribute("data-sec", secId);
+    var n = rows.length;
+    box.innerHTML = '<h3 class="lxm-h2">On the timeline <small>' + spots.length + (spots.length === 1 ? " spot" : " spots") +
+      (n ? " · " + n + (n === 1 ? " lesson" : " lessons") : "") + "</small></h3>";
+    var grp = null, seen = {};
+    spots.forEach(function (m) {
+      if (m.sec !== grp) { grp = m.sec; var g = document.createElement("h4"); g.className = "lxm-grp"; g.textContent = m.sec; box.appendChild(g); }
+      var here = rows.filter(function (r) { return r.marker_id === m.id; });
+      here.forEach(function (r) { seen[L.vkey(r)] = 1; });
+      var sp = document.createElement("section"); sp.className = "lxm-spot" + (here.length ? "" : " lxm-spot-empty"); sp.id = "spot-" + m.id; sp.setAttribute("data-spot", m.id);
+      sp.innerHTML = '<p class="lxm-sd">' + esc(L.shortDate(m.dt)) + '</p><h4 class="lxm-st serif">' + esc(m.ttl) + "</h4>" +
+        (here.length ? "" : '<p class="lxm-none">No lesson yet</p>');
+      here.forEach(function (r) { sp.appendChild(lessonBlock(r, "lxm-")); });
+      var files = document.createElement("div"); files.className = "lxm-files"; files.hidden = true; files.setAttribute("data-spot-files", m.id);
+      sp.appendChild(files);
+      box.appendChild(sp);
+    });
+    // a lesson whose spot is not in the built-in list (shouldn't happen): still shown, at the end
+    rows.forEach(function (r) { if (!seen[L.vkey(r)]) box.appendChild(lessonBlock(r, "lxm-")); });
+    if (R() && R().spotFiles) try { R().spotFiles(box); } catch (e) {}
     return box;
   }
   function injectPanel(s, el) {
     if (!el || s.extra || el.querySelector(".lxm")) return;
     var box = sectionBox(s.id); if (!box) return;
-    var before = el.querySelector(".rsm") || el.querySelector(".sx-notes");   // [drive-resources] lessons go above the section's resources
+    var before = el.querySelector(".rsm") || el.querySelector(".sx-notes");   // [timeline-v3] the spots go above the Section notes button
     if (before) el.insertBefore(box, before); else el.appendChild(box);
   }
 
@@ -185,15 +209,22 @@
     list.innerHTML = "";
     var ft = L.featured();   // [featured-30th] the featured lesson is shown in "Start here", not again here
     var gen = (ROWS || []).filter(function (r) { return !L.sectionFor(r.marker_id) && r !== ft; });
-    if (!gen.length) { sec.hidden = true; return; }
     gen.forEach(function (row, i) { var li = latestRow(row); if (i >= LATEST_SHOWN) li.hidden = true; list.appendChild(li); });
     if (all) {
       all.hidden = gen.length <= LATEST_SHOWN;
       all.textContent = "Show all lessons (" + gen.length + ")";
       all.onclick = function () { [].forEach.call(list.children, function (li) { li.hidden = false; }); all.hidden = true; };
     }
-    sec.hidden = false;
+    if (R() && R().moreFiles) try { R().moreFiles(); } catch (e) {}   // [timeline-v3] files with no lesson and no timeline spot
+    moreVis();
   }
+  // [timeline-v3] "More lessons" shows when it has a General lesson OR a file that isn't any lesson's Study notes
+  function moreVis() {
+    var sec = $("lxSimple"), list = $("lxList"), files = $("lxFiles"); if (!sec || !list) return;
+    sec.hidden = !(list.children.length || (files && !files.hidden && files.children.length));
+  }
+  L.moreVis = moreVis;
+  L.lessonsLoaded = function () { return ROWS !== null; };
   // [featured-30th] "Start here" box at the top: the featured lesson, open (video + summary + verses + Study notes)
   function renderFeatured() {
     var sec = $("lxFeat"), body = $("lxFeatBody"); if (!sec || !body) return;

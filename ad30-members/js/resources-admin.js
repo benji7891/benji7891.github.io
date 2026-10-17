@@ -337,6 +337,7 @@
     setMode();
     loadList();
   };
-  A.uploadFile = uploadFile; A.reload = function () { return loadList(); };   // [admin-combined] used by the one simple form
+  A.uploadFile = uploadFile; A.reload = function () { return loadList(); };
+  A.rows = function () { return rows; };   // [timeline-v3] js/timeline-placer.js   // [admin-combined] used by the one simple form
   A._state = function () { return { rows: rows, editing: editing, missing: missing, file: fileState, link: linkState }; };
 })();

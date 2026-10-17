@@ -1,0 +1,40 @@
+/* [timeline-v3] admin.html: drag-and-drop / "Move to…" onto a timeline spot (js/timeline-placer.js) */
+.lx-acts .tp-drag, .lx-acts .tp-move{border-color:var(--gold,#d9b870); color:var(--gold,#d9b870)}
+.tp-drag{touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none}
+.tp-drag:active{cursor:grabbing}
+.tp-tip{margin-top:-4px}
+html.tp-open{overflow:hidden}
+.tp-sheet{position:fixed; inset:0; z-index:1000; background:rgba(5,7,10,.62); display:flex; align-items:flex-end; justify-content:center}
+.tp-card{width:100%; max-width:560px; max-height:86vh; display:flex; flex-direction:column; background:var(--panel,#161a21); color:var(--ink,#eee);
+  border:1px solid var(--gold,#d9b870); border-bottom:0; border-radius:22px 22px 0 0; padding:14px 16px 0; box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+@media (min-width:900px){
+  .tp-sheet{align-items:center}
+  .tp-card{border-radius:22px; border-bottom:1px solid var(--gold,#d9b870); max-height:82vh; padding-bottom:12px}
+  .tp-sheet.tp-dragging{justify-content:flex-end; background:rgba(5,7,10,.25)}
+  .tp-sheet.tp-dragging .tp-card{margin-right:24px; max-width:440px; height:86vh; max-height:none}
+}
+.tp-sheet.tp-dragging{background:rgba(5,7,10,.3)}
+.tp-head{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.tp-head h3{margin:0; font-size:22px}
+.tp-x{min-width:44px; min-height:44px; border-radius:50%; border:1px solid var(--line,#333); background:transparent; color:inherit; font-size:18px}
+.tp-what{margin:6px 0 8px; font-size:15px; line-height:1.4}
+.tp-what span{color:var(--muted,#999); font-size:14px}
+.tp-notes{display:flex; gap:10px; align-items:flex-start; font-size:14px; margin:0 0 8px; color:var(--muted,#bbb)}
+.tp-notes input{width:20px; height:20px; flex:0 0 20px; margin-top:1px}
+.tp-list{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:4px 2px 18px; flex:1 1 auto}
+.tp-grp{margin:16px 0 6px; font:700 12px/1.4 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; color:var(--gold,#d9b870)}
+.tp-spot{display:block; position:relative; width:100%; text-align:left; margin:0 0 6px; padding:10px 12px; min-height:48px; border-radius:12px;
+  border:1px solid var(--line,#2a2f38); background:rgba(255,255,255,.02); color:inherit; font:inherit; font-size:15px; line-height:1.35}
+.tp-spot small{display:block; color:var(--muted,#999); font-size:12px}
+.tp-spot.tp-more{border-color:var(--gold,#d9b870); margin-top:4px}
+.tp-spot:focus-visible{outline:3px solid var(--gold,#d9b870); outline-offset:2px}
+.tp-spot.tp-over{background:rgba(217,184,112,.22); border-color:var(--gold,#d9b870); box-shadow:0 0 0 2px var(--gold,#d9b870) inset}
+.tp-now{display:inline-block; margin-left:8px; padding:1px 8px; border-radius:999px; background:var(--gold,#d9b870); color:#1a1507; font:700 11px/18px system-ui,sans-serif; vertical-align:middle}
+.tp-ghost{position:fixed; left:0; top:0; z-index:1001; pointer-events:none; max-width:240px; padding:8px 12px; border-radius:12px;
+  background:var(--gold,#d9b870); color:#1a1507; font:700 14px/1.3 system-ui,sans-serif; box-shadow:0 8px 24px rgba(0,0,0,.5);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tp-toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:1002; max-width:92vw; padding:12px 16px; border-radius:14px;
+  background:#0e1116; border:1px solid var(--gold,#d9b870); color:#f5f0e6; font-size:15px; box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.tp-toast[hidden]{display:none}
+.tp-undo{margin-left:10px; min-height:36px; padding:0 12px; border-radius:10px; border:1px solid var(--gold,#d9b870); background:transparent; color:var(--gold,#d9b870); font-weight:700}
+@media (prefers-reduced-motion:no-preference){ .tp-card{animation:tpUp .18s ease-out} @keyframes tpUp{from{transform:translateY(24px); opacity:.6}} }
