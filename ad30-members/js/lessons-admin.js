@@ -15,7 +15,7 @@
   function setHelp(el, html, kind) { el.innerHTML = html; el.className = kind || "lx-help"; }
   function debounce(fn, ms) { var t; return function () { var a = arguments; clearTimeout(t); t = setTimeout(function () { fn.apply(null, a); }, ms); }; }
   function where(id) {
-    if (!id) return "General (top of page)";
+    if (!id) return "More lessons (no timeline date)";
     for (var i = 0; i < markers.length; i++) if (markers[i].id === id) return L.markerLabel(markers[i]);
     return "Timeline marker “" + id + "” (no longer on the timeline)";
   }
@@ -38,7 +38,7 @@
   }
   function fillSelect(keep) {
     var sel = $("lxMarker"), cur = keep != null ? keep : sel.value, groups = {}, order = [];
-    sel.innerHTML = '<option value="">General (top of page)</option>';
+    sel.innerHTML = '<option value="">More lessons (no timeline date)</option>';
     markers.forEach(function (m) { if (!groups[m.sec]) { groups[m.sec] = []; order.push(m.sec); } groups[m.sec].push(m); });
     order.forEach(function (s) {
       var g = document.createElement("optgroup"); g.label = s || "Timeline";

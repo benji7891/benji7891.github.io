@@ -73,7 +73,8 @@
         <textarea class="field" id="cbNote" rows="3" maxlength="2000" placeholder="A sentence or two for members."></textarea>
 
         <label class="lx-l" for="cbMarker">Timeline spot</label>
-        <select class="field" id="cbMarker"><option value="">General (top of page)</option></select>
+        <select class="field" id="cbMarker"><option value="">More lessons (no timeline date)</option></select>
+        <p class="lx-help">“More lessons” = not about one date: it shows in <b>More lessons</b> under the timeline on the member page. Or pick a date or feast to put it inside that section.</p>
 
         <button class="btn" id="cbSave" type="submit">Save</button>
         <p class="msg" id="cbMsg" role="status" aria-live="polite"></p>
@@ -105,8 +106,8 @@
         <div class="lx-preview" id="lxPrev" hidden><span class="lx-thumb"><img id="lxPrevImg" alt="Picture from the video"></span><p id="lxPrevTxt"></p></div>
 
         <label class="lx-l" for="lxMarker">Where on the timeline</label>
-        <select class="field" id="lxMarker"><option value="">General (top of page)</option></select>
-        <p class="lx-help">Pick the date or feast this lesson is about. Every lesson also shows in “Latest lessons” at the top of the site.</p>
+        <select class="field" id="lxMarker"><option value="">More lessons (no timeline date)</option></select>
+        <p class="lx-help">Pick the date or feast this lesson is about, or “More lessons” if it isn’t about one date (it then shows in <b>More lessons</b> under the timeline on the member page).</p>
 
         <label class="lx-l" for="lxSummary">Summary <small>(optional)</small></label>
         <textarea class="field" id="lxSummary" rows="6" maxlength="20000" placeholder="A few sentences about the lesson. You can paste this from Claude."></textarea>
@@ -158,8 +159,8 @@
         <p class="lx-help">This is <b>your note as Admin — not Scripture</b>. Members see it under the label <b>ADMIN’S NOTE</b>, kept separate from the Bible text.</p>
 
         <label class="lx-l" for="rsMarker">Where on the timeline <small>(optional)</small></label>
-        <select class="field" id="rsMarker"><option value="">General (Resources list only)</option></select>
-        <p class="lx-help">Every resource shows under “Resources” at the top of the member page. Pick a date or feast to show it inside that section too.</p>
+        <select class="field" id="rsMarker"><option value="">More lessons (no timeline date)</option></select>
+        <p class="lx-help">Every resource shows under “Resources” on the member page. Pick a date or feast to show it inside that section too. With “More lessons”, a PDF with the same title as a More lessons lesson shows as that lesson’s Study notes.</p>
 
         <p class="rs-type" id="rsType" aria-live="polite"></p>
         <button class="btn" id="rsSave" type="submit">Upload and add</button>

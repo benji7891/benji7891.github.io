@@ -11,7 +11,7 @@
   function pdfMode() { var c = document.querySelector('input[name="cbPdfMode"]:checked'); return c ? c.value : "file"; }
   function fillSelect() {
     var sel = $("cbMarker"), cur = sel.value, groups = {}, order = [];
-    sel.innerHTML = '<option value="">General (top of page)</option>';
+    sel.innerHTML = '<option value="">More lessons (no timeline date)</option>';
     L.MARKERS.forEach(function (m) { if (!groups[m.sec]) { groups[m.sec] = []; order.push(m.sec); } groups[m.sec].push(m); });
     order.forEach(function (s) {
       var g = document.createElement("optgroup"); g.label = s || "Timeline";

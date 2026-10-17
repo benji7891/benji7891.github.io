@@ -17,12 +17,12 @@
   function say(el, text, kind) { el.textContent = text || ""; el.className = "msg" + (kind ? " " + kind : ""); }
   function help(el, html, kind) { el.innerHTML = html; el.className = kind || "lx-help"; }
   function where(id) {
-    if (!id) return "General (Resources list only)";
+    if (!id) return "More lessons (no timeline date)";
     var m = L.marker(id); return m ? L.markerLabel(m) : "Timeline marker “" + id + "” (no longer on the timeline)";
   }
   function fillSelect() {
     var sel = $("rsMarker"), cur = sel.value, groups = {}, order = [];
-    sel.innerHTML = '<option value="">General (Resources list only)</option>';
+    sel.innerHTML = '<option value="">More lessons (no timeline date)</option>';
     L.MARKERS.forEach(function (m) { if (!groups[m.sec]) { groups[m.sec] = []; order.push(m.sec); } groups[m.sec].push(m); });
     order.forEach(function (s) {
       var g = document.createElement("optgroup"); g.label = s || "Timeline";
@@ -168,7 +168,7 @@
       if (r.error || !r.data || !r.data.length) throw r.error || { message: "AD30_NOT_SAVED" };
       busy(false);
       clearForm();
-      say(msg, "Added ✓ “" + r.data[0].title + "” is on the site now — " + (r.data[0].marker_id ? where(r.data[0].marker_id) + ", and in “Resources”." : "in “Resources” at the top of the member page."), "ok");
+      say(msg, "Added ✓ “" + r.data[0].title + "” is on the site now — " + (r.data[0].marker_id ? where(r.data[0].marker_id) + ", and in “Resources”." : "in “Resources” on the member page (no timeline date)."), "ok");
       msg.scrollIntoView({ block: "center", behavior: "smooth" });
       loadList();
     }).catch(function (e) {
