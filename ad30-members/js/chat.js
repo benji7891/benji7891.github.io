@@ -5,7 +5,9 @@
    row-level security decides who sees what; this file only draws the screens.
    Live updates: Supabase Realtime (new rows in chat_messages). If that isn't connected, it checks every 15 s.
    SAFETY: every message is put on the page with textContent (never innerHTML), so typed text can't run as code.
-   PREVIEW: in demo mode (site not connected, ?demo=1) it uses made-up EXAMPLE DATA and saves nothing. */
+   PREVIEW: in demo mode (site not connected, ?demo=1) it uses made-up EXAMPLE DATA and saves nothing.
+   [admin-chat] Admin page also has a pinned "Ben & Sam (admins only)" chat: table public.admin_chat_messages
+   (migrations/2026-10-17_admin_chat.sql). Only Admins can read or write it; it is separate from member chats. */
 (function () {
   "use strict";
   var AD30 = window.AD30;
@@ -77,9 +79,9 @@
       },
       markRead: function (tid) { return sb.rpc("chat_mark_read", { p_thread: tid }).then(function () {}, function () {}); },
       // onRow(message) for each new message the viewer is allowed to see; onState(true/false) = live or not
-      live: function (name, filter, onRow, onState) {
+      live: function (name, filter, onRow, onState, table) {
         if (!sb.channel) { onState(false); return; }
-        var opts = { event: "INSERT", schema: "public", table: "chat_messages" };
+        var opts = { event: "INSERT", schema: "public", table: table || "chat_messages" };
         if (filter) opts.filter = filter;
         var timer = setTimeout(function () { onState(false); }, 10000);
         try {
@@ -89,6 +91,26 @@
               else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") { clearTimeout(timer); onState(false); }
             });
         } catch (e) { clearTimeout(timer); onState(false); }
+      },
+      // [admin-chat] Ben & Sam admin-only chat (one shared room)
+      admin: {
+        messages: function () {
+          return sb.from("admin_chat_messages").select("id,sender_id,sender_name,body,created_at")
+            .order("created_at", { ascending: true }).limit(500)
+            .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+        },
+        last: function () {
+          return sb.from("admin_chat_messages").select("id,sender_id,sender_name,body,created_at")
+            .order("id", { ascending: false }).limit(1)
+            .then(function (r) { if (r.error) throw r.error; return (r.data || [])[0] || null; });
+        },
+        send: function (body) {
+          return sb.from("admin_chat_messages").insert({ body: body })
+            .select("id,sender_id,sender_name,body,created_at").single()
+            .then(function (r) { if (r.error) throw r.error; return r.data; });
+        },
+        unread: function () { return sb.rpc("admin_chat_unread").then(function (r) { return r.error ? 0 : (r.data || 0); }, function () { return 0; }); },
+        markRead: function () { return sb.rpc("admin_chat_mark_read").then(function () {}, function () {}); }
       }
     };
   }
@@ -143,14 +165,31 @@
         if (t) { if (CH.viewerIsAdmin) t.admin_unread = 0; else t.member_unread = 0; }
         return P(null);
       },
-      live: function (n, f, onRow, onState) { setTimeout(function () { onState(true); }, 50); }
+      live: function (n, f, onRow, onState) { setTimeout(function () { onState(true); }, 50); },
+      // [admin-chat] EXAMPLE DATA: the demo viewer is "Ben" (user id "demo"); Sam is "sam-example"
+      admin: (function () {
+        var A = [
+          ["sam-example", "Sam", "Ben, can you look at where 7.1B sits on the timeline before we meet?", 5 * H],
+          ["demo", "Ben", "Yes. I’ll check it tonight. Coffee at 10 tomorrow?", 4.5 * H],
+          ["sam-example", "Sam", "Works for me. Sarah asked about Daniel 12 in her chat, can you answer her?", 20 * M],
+          ["sam-example", "Sam", "Also, Ruth says the 30th year video stops halfway on her iPad.", 15 * M]
+        ].map(function (a) { return { id: ++id, sender_id: a[0], sender_name: a[1], body: a[2], created_at: ago(a[3]) }; });
+        var readUpTo = A[1].id;
+        return {
+          messages: function () { return P(A); },
+          last: function () { return P(A[A.length - 1] || null); },
+          send: function (body) { var m = { id: ++id, sender_id: "demo", sender_name: "Ben", body: body, created_at: new Date().toISOString() }; A.push(m); readUpTo = m.id; return P(m); },
+          unread: function () { return P(A.filter(function (m) { return m.id > readUpTo && m.sender_id !== "demo"; }).length); },
+          markRead: function () { if (A.length) readUpTo = A[A.length - 1].id; return P(null); }
+        };
+      })()
     };
   }
 
   /* ---------------- shared: one conversation view ---------------- */
   // Builds the message list + reply box inside `box`. Returns { load(tid), add(row), refresh(), focus() }.
   function Conversation(box, opts) {
-    var list = el("ol", "ch-msgs"), seen = {}, lastDay = "", c = { tid: null };
+    var list = el("ol", "ch-msgs"), seen = {}, lastDay = "", c = { tid: null }, src = opts.src || api;
     list.setAttribute("aria-live", "polite");
     var form = el("form", "ch-form"), ta = el("textarea", "field ch-input"), btn = el("button", "btn ch-send", "Send");
     var count = el("p", "ch-count"), err = el("p", "msg err ch-err");
@@ -166,10 +205,10 @@
       seen[m.id] = 1; empty.hidden = true;
       var d = new Date(m.created_at), k = dayKey(d);
       if (k !== lastDay) { lastDay = k; list.appendChild(el("li", "ch-day", dayLabel(d))); }
-      var mine = opts.viewerIsAdmin ? m.sender_is_admin : !m.sender_is_admin;
+      var mine = opts.isMine ? opts.isMine(m) : (opts.viewerIsAdmin ? m.sender_is_admin : !m.sender_is_admin);
       var li = el("li", "ch-m " + (mine ? "ch-mine" : "ch-theirs") + (m.sender_is_admin ? " ch-admin" : ""));
       var meta = el("p", "ch-meta");
-      meta.appendChild(el("b", null, senderLabel(m, opts.viewerIsAdmin)));
+      meta.appendChild(el("b", null, opts.label ? opts.label(m) : senderLabel(m, opts.viewerIsAdmin)));
       meta.appendChild(document.createTextNode(" · " + when(m.created_at)));
       li.appendChild(meta);
       li.appendChild(el("p", "ch-body", m.body));   // textContent: safe
@@ -179,11 +218,11 @@
     c.add = function (m) { if (add(m)) { scrollDown(); return true; } return false; };
     c.load = function (tid) {
       c.tid = tid; seen = {}; lastDay = ""; list.textContent = ""; empty.hidden = false;
-      return api.messages(tid).then(function (rows) { rows.forEach(add); scrollDown(); });
+      return src.messages(tid).then(function (rows) { rows.forEach(add); scrollDown(); });
     };
     c.refresh = function () {
       if (!c.tid) return Promise.resolve(0);
-      return api.messages(c.tid).then(function (rows) { var n = 0; rows.forEach(function (m) { if (add(m)) n++; }); if (n) scrollDown(); return n; });
+      return src.messages(c.tid).then(function (rows) { var n = 0; rows.forEach(function (m) { if (add(m)) n++; }); if (n) scrollDown(); return n; });
     };
     function counter() { var n = ta.value.length; count.textContent = n > MAX - 200 ? (MAX - n) + " characters left" : ""; }
     ta.addEventListener("input", counter);
@@ -196,7 +235,7 @@
       if (!body || !c.tid) return;
       if (body.length > MAX) { err.hidden = false; err.textContent = "Please keep it under " + MAX + " characters."; return; }
       btn.disabled = true; btn.textContent = "Sending…"; err.hidden = true;
-      api.send(c.tid, body).then(function (row) {
+      src.send(c.tid, body).then(function (row) {
         btn.disabled = false; btn.textContent = "Send"; ta.value = ""; counter(); c.add(row);
         if (opts.onSent) opts.onSent(row);
       }, function (er) { btn.disabled = false; btn.textContent = "Send"; err.hidden = false; err.textContent = friendly(er); });
@@ -280,6 +319,14 @@
     var tip = el("p", "lx-tip", "Private one-on-one chats. Each member sees only their own chat with you. Ben and Sam both see every chat and can reply.");
     sec.appendChild(tip);
     var state = el("p", "ch-state"); sec.appendChild(state);
+    // [admin-chat] pinned "Ben & Sam (admins only)" row, kept apart from the member list
+    var pinList = el("ul", "ch-inbox ch-pins"), pinLi = el("li"), pin = el("button", "ch-row ch-row-pin");
+    pin.type = "button";
+    var pinTop = el("span", "ch-row-top"), pinWho = el("span", "ch-who", "🔒 Ben & Sam (admins only)"), pinWhen = el("span", "ch-when", "");
+    var pinBot = el("span", "ch-row-bot"), pinPrev = el("span", "ch-prev", "Private chat between the two Admins"), pinBadge = el("span", "ch-badge");
+    pinBadge.hidden = true;
+    pinTop.appendChild(pinWho); pinTop.appendChild(pinWhen); pinBot.appendChild(pinPrev); pinBot.appendChild(pinBadge);
+    pin.appendChild(pinTop); pin.appendChild(pinBot); pinLi.appendChild(pin); pinList.appendChild(pinLi); sec.appendChild(pinList);
     var inbox = el("ul", "ch-inbox"); sec.appendChild(inbox);
     var emptyIn = el("p", "hint", "No member messages yet."); emptyIn.hidden = true; sec.appendChild(emptyIn);
     var view = el("div", "ch-thread"); view.hidden = true;
@@ -287,16 +334,60 @@
     var vt = el("div", "ch-title"), vName = el("b", null, ""), vSub = el("span", null, "Private · only this member and the Admins");
     vt.appendChild(vName); vt.appendChild(vSub); vbar.appendChild(back); vbar.appendChild(vt); view.appendChild(vbar);
     var vbody = el("div", "ch-conv"); view.appendChild(vbody); sec.appendChild(view);
+    // [admin-chat] the Ben & Sam view
+    var aview = el("div", "ch-thread ch-thread-admins"); aview.hidden = true;
+    var abar = el("div", "ch-bar ch-bar-in"), aback = el("button", "ch-x", "‹ All chats"); aback.type = "button";
+    var at = el("div", "ch-title"); at.appendChild(el("b", null, "🔒 Ben & Sam"));
+    at.appendChild(el("span", null, "Admins only · members can’t see this"));
+    abar.appendChild(aback); abar.appendChild(at); aview.appendChild(abar);
+    var abody = el("div", "ch-conv"); aview.appendChild(abody); sec.appendChild(aview);
     host.insertBefore(sec, host.firstChild);
 
     var myName = api.example ? "Ben" : (ADMIN_NAMES[String(user.email || "").toLowerCase()] || "Admin");
     var conv = Conversation(vbody, { viewerIsAdmin: true, placeholder: "Reply as " + myName + "…",
       emptyText: "No messages in this chat yet.", onSent: function () { loadInbox(); } });
     var openTid = null, pollT = null, threadsById = {};
+    // [admin-chat] Ben & Sam conversation. Rows get thread_id "admins" so the shared view code can use them.
+    var myId = AD30.user && AD30.user.id, otherName = myName === "Ben" ? "Sam" : myName === "Sam" ? "Ben" : "the other Admin";
+    function tag(m) { if (m) m.thread_id = "admins"; return m; }
+    var asrc = {
+      messages: function () { return api.admin.messages().then(function (rows) { return rows.map(tag); }); },
+      send: function (tid, body) { return api.admin.send(body).then(tag); }
+    };
+    var aconv = Conversation(abody, { src: asrc, placeholder: "Message " + otherName + "…",
+      emptyText: "No messages yet. Only Ben and Sam can see this chat.",
+      isMine: function (m) { return !!myId && m.sender_id === myId; },
+      label: function (m) { return m.sender_name || "Admin"; },
+      onSent: function () { api.admin.markRead().then(drawPin); } });
+    var aOpen = false, apollT = null;
+    function drawPin() {
+      return Promise.all([api.admin.last(), api.admin.unread()]).then(function (r) {
+        var last = r[0], n = r[1] || 0;
+        pinWhen.textContent = last ? when(last.created_at, true) : "";
+        pinPrev.textContent = last ? (last.sender_name || "Admin") + ": " + String(last.body).replace(/\s+/g, " ").slice(0, 140) : "Private chat between the two Admins";
+        pinBadge.hidden = !n; pinBadge.textContent = n > 9 ? "9+" : String(n);
+        pin.classList.toggle("ch-unread", !!n);
+      }, function () {});
+    }
+    function openAdmins() {
+      aOpen = true; openTid = null;
+      pinList.hidden = true; inbox.hidden = true; emptyIn.hidden = true; tip.hidden = true; view.hidden = true; aview.hidden = false;
+      aconv.load("admins").then(function () { api.admin.markRead().then(drawPin); });
+      try { sec.scrollIntoView({ block: "start" }); } catch (e) {}
+    }
+    function closeAdmins() { aOpen = false; aview.hidden = true; pinList.hidden = false; inbox.hidden = false; tip.hidden = false; drawPin(); loadInbox(); }
+    pin.addEventListener("click", openAdmins);
+    aback.addEventListener("click", closeAdmins);
+    function atick() { if (aOpen && !document.hidden) aconv.refresh().then(function (n) { if (n) api.admin.markRead().then(drawPin); }); else drawPin(); }
+    api.live("chat-admins-only", null, function (row) {
+      tag(row);
+      if (aOpen && !document.hidden) { aconv.add(row); api.admin.markRead().then(drawPin); } else drawPin();
+    }, function (on) { clearInterval(apollT); if (!on) apollT = setInterval(atick, POLL_MS); }, "admin_chat_messages");
+    drawPin();
 
     function drawInbox(rows) {
       inbox.textContent = ""; threadsById = {};
-      emptyIn.hidden = rows.length > 0 || !view.hidden;
+      emptyIn.hidden = rows.length > 0 || !view.hidden || aOpen;
       var unreadTotal = 0;
       rows.forEach(function (t) {
         threadsById[t.id] = t; unreadTotal += t.admin_unread || 0;
@@ -319,11 +410,11 @@
     function openThread(tid) {
       openTid = tid; var t = threadsById[tid] || {};
       vName.textContent = t.member_email || "Member";
-      inbox.hidden = true; emptyIn.hidden = true; tip.hidden = true; view.hidden = false;
+      inbox.hidden = true; pinList.hidden = true; emptyIn.hidden = true; tip.hidden = true; view.hidden = false;
       conv.load(tid).then(function () { api.markRead(tid).then(loadInbox); });
       try { sec.scrollIntoView({ block: "start" }); } catch (e) {}
     }
-    function closeThread() { openTid = null; view.hidden = true; inbox.hidden = false; tip.hidden = false; loadInbox(); }
+    function closeThread() { openTid = null; view.hidden = true; inbox.hidden = false; pinList.hidden = false; tip.hidden = false; loadInbox(); drawPin(); }
     back.addEventListener("click", closeThread);
     function tick() { loadInbox(); if (openTid && !document.hidden) conv.refresh().then(function (n) { if (n) api.markRead(openTid); }); }
     function setLive(on) {
@@ -335,10 +426,10 @@
       if (openTid && row.thread_id === openTid && !document.hidden) { conv.add(row); api.markRead(openTid).then(loadInbox); }
       else loadInbox();
     }, setLive);
-    document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) { tick(); atick(); } });
     if (location.hash === "#chat") setTimeout(function () { try { sec.scrollIntoView({ block: "start" }); } catch (e) {} }, 300);
     loadInbox();
-    CH.admin = { open: openThread, back: closeThread };
+    CH.admin = { open: openThread, back: closeThread, openAdmins: openAdmins, closeAdmins: closeAdmins };
   }
 
   /* ---------------- start: wait for the page's own sign-in, then attach ---------------- */

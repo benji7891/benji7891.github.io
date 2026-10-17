@@ -83,3 +83,10 @@ html.ch-open, html.ch-open body{overflow:hidden}
 .ch-thread .ch-form{margin:0 -18px -22px; border-radius:0 0 20px 20px; padding:12px 18px 16px}
 .ch-thread .ch-empty, .ch-thread .ch-err, .ch-thread .ch-count{margin-left:0; margin-right:0}
 @media (max-width:420px){ .ch-thread .ch-form{margin:0 -14px -20px; padding:12px 14px 14px} }
+/* [admin-chat] pinned "Ben & Sam (admins only)" row + its view */
+.ch-pins{margin-bottom:6px; border-bottom:1px solid var(--line,#2a303a)}
+.ch-pins[hidden]{display:none}
+.ch-row-pin{background:rgba(217,184,112,.07); border:1px dashed rgba(217,184,112,.45); margin-bottom:10px}
+.ch-row-pin .ch-who{color:var(--gold,#d9b870)}
+.ch-row-pin.ch-unread .ch-who::before{display:none}
+.ch-thread-admins .ch-title b{color:var(--gold,#d9b870)}
