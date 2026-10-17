@@ -95,6 +95,14 @@
 
   <!-- 10 Nisan countdown: Teacher view only (removed from member view Oct 4, 2026) -->
 
+  <!-- [featured-30th] "Start here": one featured lesson at the very top (js/lessons-member.js). The lesson is picked by
+       FEATURED_LESSON in js/config.js, or by default the newest lesson whose title has "30th year" or "thirtieth".
+       No matching lesson = this box stays hidden and the page looks exactly as before. -->
+  <section class="lxm-top lxm-feat" id="lxFeat" aria-labelledby="lxFeatH" hidden>
+    <h2 class="lxm-h serif" id="lxFeatH">Start here</h2>
+    <div id="lxFeatBody"></div>
+  </section>
+
   <!-- [simple-rework] the sections: tap a title to open it (built by js/simple.js from js/simple-data.js) -->
   <p class="sx-hint">Tap a title to open it.</p>
   <ol class="sx-list" id="sxList" aria-label="Study sections"></ol>

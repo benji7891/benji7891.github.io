@@ -182,12 +182,23 @@
     if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
     return r.kind === "image" ? "picture" : "link";
   }
+  /* [featured-30th] the featured lesson's Study notes when no file has the lesson's exact title: a file in the same
+     place (General, or the lesson's timeline spot) whose title or file name has the featured words, e.g.
+     "thethirtiethyear_deeper_study_notes.pdf". A PDF first; only one is shown. */
+  function fileName(r) { return String(r.storage_path || r.url || "").split(/[?#]/)[0].split("/").pop(); }
+  function featGuide(m) {
+    if (!L || !L.featHas) return [];
+    var c = ROWS.filter(function (r) { return (r.marker_id || "") === (m || "") && (L.featHas(r.title) || L.featHas(fileName(r))); });
+    c.sort(function (a, b) { return (b.kind === "pdf") - (a.kind === "pdf") || byOrder(a, b); });
+    return c.slice(0, 1);
+  }
   function fillGuides(scope) {
     if (!ROWS) return;
     [].forEach.call((scope || document).querySelectorAll(".lxm-guide[data-lxg-m]"), function (box) {
       if (box._rsDone) return;
       var m = box.getAttribute("data-lxg-m"), t = box.getAttribute("data-lxg-t"), c = box.getAttribute("data-lxg-c");
       var hits = ROWS.filter(function (r) { return guideOf(r, m, t, c); }).sort(byOrder);
+      if (!hits.length && box.getAttribute("data-lxg-f")) hits = featGuide(m);   // [featured-30th]
       if (!hits.length) return;
       box._rsDone = true; box.hidden = false;
       box.innerHTML = hits.map(function (r) {

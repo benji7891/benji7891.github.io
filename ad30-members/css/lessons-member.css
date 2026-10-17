@@ -95,3 +95,8 @@
 .sx-item .sx-notes{background:transparent; color:var(--gold,#d9b870); font-size:17px; font-weight:500; min-height:52px}
 /* [layout-v2] "More lessons" now sits below the timeline */
 #lxSimple.lxm-top{margin-top:52px}
+
+/* [featured-30th] "Start here": the featured lesson at the very top, above the timeline */
+.lxm-top.lxm-feat{margin:28px 0 40px}
+.lxm-feat .lxm-h{margin-bottom:14px}
+.lxm-feat .lxm-l{border:1px solid rgba(217,184,112,.55); border-radius:20px; padding:18px 18px 20px; background:rgba(217,184,112,.05)}

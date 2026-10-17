@@ -47,7 +47,18 @@
     return null;
   };
   L.MEMBER_MAP = EXTRA;
-  L.memberLessons = function () { return ROWS || []; };   // [studynote-fix] read by js/resources.js (which file belongs to which lesson)
+  L.memberLessons = function () { return ROWS || []; };
+  /* [featured-30th] "Start here" (#lxFeat): the newest lesson whose title contains one of these words (any case, spaces
+     and punctuation ignored). Change it in js/config.js:  FEATURED_LESSON: ["30th year", "thirtieth"]  (a word or a list);
+     FEATURED_LESSON: "" turns the box off. No match = nothing shown, the page is as before. */
+  function compact(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+  L.featTerms = function () {
+    var c = window.AD30_CONFIG ? window.AD30_CONFIG.FEATURED_LESSON : undefined;
+    if (c === undefined || c === null) c = ["30th year", "thirtieth"];
+    return [].concat(c).map(compact).filter(function (t) { return t.length >= 3; });
+  };
+  L.featHas = function (text) { var x = compact(text); return !!x && L.featTerms().some(function (t) { return x.indexOf(t) >= 0; }); };
+  L.featured = function () { var hit = null; (ROWS || []).forEach(function (r) { if (!hit && L.featHas(r.title)) hit = r; }); return hit; };   // [studynote-fix] read by js/resources.js (which file belongs to which lesson)
   function byOrder(a, b) {
     var x = a.sort_order == null ? 1e9 : a.sort_order, y = b.sort_order == null ? 1e9 : b.sort_order;
     return x - y || String(a.created_at).localeCompare(String(b.created_at));
@@ -91,7 +102,7 @@
   // Members see only the date added: the timeline marker's own title/date are Teacher-view wording (some carry
   // placement notes), and the lesson already sits inside its section.
   function whereLine(row) { return "Added " + L.dateLabel(row.created_at); }
-  function lessonBlock(row, prefix) {
+  function lessonBlock(row, prefix, feat) {
     var id = L.vkey(row), el = document.createElement("article");
     el.className = "lxm-l"; el.id = prefix + id; el.setAttribute("data-lx", id);
     var sum = L.summaryHTML(row.summary);
@@ -104,7 +115,7 @@
       (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the Admin — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
       versesBox(row.verse_refs, false) +
       // [studynote-fix] the lesson's own study guide (PDF / Drive link) goes right here, filled by js/resources.js
-      '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"></div>';
+      '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"' + (feat ? ' data-lxg-f="1"' : "") + '></div>';
     el.querySelector(".lx-thumb").addEventListener("click", function () {
       L.player(el.querySelector(".lxm-media"), row);
       AD30.track("card_open", { marker_id: row.marker_id || "lessons", video_id: id, video_title: String(row.title).slice(0, 200) });
@@ -172,7 +183,8 @@
   function renderLatest() {
     var sec = $("lxSimple"), list = $("lxList"), all = $("lxAll"); if (!sec || !list) return;
     list.innerHTML = "";
-    var gen = (ROWS || []).filter(function (r) { return !L.sectionFor(r.marker_id); });
+    var ft = L.featured();   // [featured-30th] the featured lesson is shown in "Start here", not again here
+    var gen = (ROWS || []).filter(function (r) { return !L.sectionFor(r.marker_id) && r !== ft; });
     if (!gen.length) { sec.hidden = true; return; }
     gen.forEach(function (row, i) { var li = latestRow(row); if (i >= LATEST_SHOWN) li.hidden = true; list.appendChild(li); });
     if (all) {
@@ -180,6 +192,15 @@
       all.textContent = "Show all lessons (" + gen.length + ")";
       all.onclick = function () { [].forEach.call(list.children, function (li) { li.hidden = false; }); all.hidden = true; };
     }
+    sec.hidden = false;
+  }
+  // [featured-30th] "Start here" box at the top: the featured lesson, open (video + summary + verses + Study notes)
+  function renderFeatured() {
+    var sec = $("lxFeat"), body = $("lxFeatBody"); if (!sec || !body) return;
+    var row = L.featured();
+    body.innerHTML = "";
+    if (!row) { sec.hidden = true; return; }
+    body.appendChild(lessonBlock(row, "lxf-", true));
     sec.hidden = false;
   }
   function flash(el) {
@@ -252,7 +273,7 @@
         ROWS = L.usable(res.rows);
         ROWS.forEach(function (r) { if (r.verse_refs) resolve(r.verse_refs); });   // load the KJV text now, so notes and print have it
         var anchor = keepPlace();
-        renderLatest(); decorate();
+        renderFeatured(); renderLatest(); decorate();
         sections().forEach(function (s) { var li = $("s-" + s.id), inner = li && li.querySelector(".sx-in"); if (inner && inner.firstChild) injectPanel(s, inner); });
         anchor();
       } catch (e) { if (window.console) console.warn("[lessons]", e); }
@@ -264,6 +285,7 @@
     want = String(want || "");
     if (/^v-[A-Za-z0-9_-]{11,100}$/.test(want)) {
       var row = rowById(want.slice(2)); if (!row) return false;
+      if (row === L.featured() && $("lxf-" + L.vkey(row))) { flash($("lxf-" + L.vkey(row))); return true; }   // [featured-30th]
       var secId = L.sectionFor(row.marker_id);
       if (secId) return openInSection(row, secId);
       var li = $("lxs-" + L.vkey(row)); if (!li) return false;
