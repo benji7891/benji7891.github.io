@@ -138,3 +138,5 @@
   html:not(.notes-open) .sx-notes, html:not(.notes-open) .sx-row, html:not(.notes-open) .sx-videos,
   html:not(.notes-open) .acct, html:not(.notes-open) .linkbtn{display:none !important}
 }
+/* [remove-water-video] a section with uploaded lessons does not say "Video coming soon." */
+.sx-item:has(.lxm-l) .sx-soon{display:none}

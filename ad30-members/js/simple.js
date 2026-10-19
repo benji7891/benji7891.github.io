@@ -344,7 +344,7 @@
       s.verses.forEach(function (v) { h += verseHtml(v, "nt-v"); });
       h += '</section>';
     }
-    var groups = [["guide", "From Professor Zac’s guide"], ["video", "From the video lesson " + (s.video && s.video.lesson ? s.video.lesson : "")]];
+    var groups = [["guide", "From Professor Zac’s guide"], ["video", "From the video lesson " + (s.video && s.video.lesson ? s.video.lesson : s.videoLesson || "")]];
     var teach = s.teaching || [];
     if (teach.length) {
       h += '<section class="nt-teach"><h2 class="nt-th">Teaching</h2><p class="nt-note">Notes on the passage — teaching, not Scripture.</p>';
