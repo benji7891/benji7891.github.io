@@ -18,6 +18,7 @@
 #rsAdmin:has(#rsCancel[hidden]) > #rsH, #rsAdmin:has(#rsCancel[hidden]) > .lx-tip, #rsAdmin:has(#rsCancel[hidden]) #rsForm { display:none }
 .cb-admin .btn { width:100%; margin-top:16px }
 </style>
+<style>/* [invite-autosend] */ .inv-status{list-style:none;padding:0;margin:8px 0 14px} .inv-status li{padding:8px 10px;border-radius:10px;margin:6px 0;background:#1d222b;overflow-wrap:anywhere;font-size:15px} .inv-status .inv-ok{color:#9fd8a5} .inv-status .inv-err{color:#f0a58f} .inv-status .inv-wait{color:#9a9fa8}</style>
 </head>
 <body class="admin">
 
@@ -221,10 +222,10 @@
     <div class="tbl" id="tWatch"></div>
 
     <h2 class="serif">Invite testers</h2>
-    <p class="hint">Only emails on this list (or people arriving with a ministry link) can sign in. Paste one or more emails, then tap Add. Then send them the site link yourself.</p>
+    <p class="hint">Only emails on this list (or people arriving with a ministry link) can sign in. Paste one or more emails, then tap Add — each one is emailed a sign-in link automatically. The site can send about 30 emails an hour.</p>
     <form class="row" id="inviteForm">
       <textarea class="field" id="inviteEmails" rows="2" placeholder="friend@example.com, another@example.com" style="padding:12px 14px"></textarea>
-      <button class="btn" type="submit">Add</button>
+      <button class="btn" type="submit">Add &amp; send link</button>
     </form>
     <p class="msg" id="inviteMsg" role="status"></p>
     <div class="tbl" id="tInvites"></div>

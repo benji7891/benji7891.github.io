@@ -137,7 +137,10 @@
 
   function paintInvites(list) {
     table($("tInvites"), list, [["email", "Email"], ["invited_at", "Added", fWhen],
-      ["email", "", function (v) { return '<button class="xbtn" type="button" data-rm="' + esc(v) + '">Remove</button>'; }]], "The list is empty.");
+      ["email", "", function (v) { return '<button class="xbtn" type="button" data-resend="' + esc(v) + '">Resend link</button> <button class="xbtn" type="button" data-rm="' + esc(v) + '">Remove</button>'; }]], "The list is empty.");
+    [].forEach.call($("tInvites").querySelectorAll("[data-resend]"), function (b) {   // [invite-autosend]
+      b.addEventListener("click", function () { var em = b.getAttribute("data-resend"); b.disabled = true; sendLinks([em], true).then(function () { b.disabled = false; }); });
+    });
     [].forEach.call($("tInvites").querySelectorAll("[data-rm]"), function (b) {
       b.addEventListener("click", function () {
         var em = b.getAttribute("data-rm");
@@ -151,17 +154,80 @@
   function showErr(e) { $("notAdmin").hidden = false; $("notAdmin").textContent = "Couldn’t load: " + (e.message || e); }
   function say(el, t, kind) { el.textContent = t; el.className = "msg " + (kind || ""); }
 
+  /* ---------- [invite-autosend] email each invited person a sign-in link ----------
+     Same call the sign-in page uses (common.js): auth.signInWithOtp, implicit flow. It only asks Supabase to email
+     that address; it does not touch the Admin's own session (no session is returned or stored).
+     The email must already be on public.invites (we upsert first), or the ad30_check_invite trigger refuses new users.
+     Supabase limits: ~30 emails/hour for the whole site (custom SMTP setting), and 60 s between emails to the same person. */
+  var MAX_AT_ONCE = 25, GAP_MS = 1500;
+  function memberUrl() {
+    var here = location.origin + location.pathname.replace(/[^\/]*$/, "");
+    return /^https:\/\//.test(here) && !/localhost|127\.0\.0\.1/.test(here) ? here : siteUrl();
+  }
+  function sendReason(err) {
+    var t = String((err && (err.message || err.msg || err.error_description)) || err || ""), st = err && err.status, sec = t.match(/after (\d+) seconds?/i);
+    if (sec) return "This person was just sent one — try again in " + sec[1] + " seconds.";
+    if (st === 429 || /rate limit|too many/i.test(t)) return "The site’s hourly email limit (about 30) was reached — try again in a few minutes.";
+    if (/AD30_NOT_INVITED|database error saving new user|not.*invited|signups? not allowed/i.test(t)) return "Not on the list yet — tap Add again, then Resend link.";
+    if (/email address not authorized|smtp|error sending/i.test(t)) return "The email sender (Gmail) refused it — tell Ben (check Supabase SMTP settings).";
+    if (/redirect/i.test(t)) return "The site link isn’t allowed in Supabase’s Redirect URLs — tell Ben.";
+    if (/invalid.*email|unable to validate/i.test(t)) return "That doesn’t look like a real email address.";
+    if (/fetch|network|load failed/i.test(t)) return "No connection just now — try again in a minute.";
+    return "Didn’t send: " + t;
+  }
+  function otp(email) {
+    if (AD30.demo) {   // preview: nothing is sent. "ratelimit@" / "fail@" addresses show the failure messages.
+      return new Promise(function (ok) { setTimeout(function () {
+        ok(/^ratelimit@/.test(email) ? { error: { status: 429, message: "email rate limit exceeded" } } : /^wait@/.test(email) ? { error: { status: 429, message: "For security purposes, you can only request this after 42 seconds." } } : { error: null });
+      }, 300); });
+    }
+    return AD30.sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: memberUrl(), shouldCreateUser: true } });
+  }
+  function statusBox() {
+    var ul = $("inviteStatus");
+    if (!ul) { ul = document.createElement("ul"); ul.id = "inviteStatus"; ul.className = "inv-status"; ul.setAttribute("aria-live", "polite"); $("inviteMsg").insertAdjacentElement("afterend", ul); }
+    return ul;
+  }
+  function line(ul, email) {
+    var li = ul.querySelector('li[data-em="' + email.replace(/"/g, "") + '"]');
+    if (!li) { li = document.createElement("li"); li.setAttribute("data-em", email); ul.appendChild(li); }
+    return function (state, text) { li.className = "inv-" + state; li.innerHTML = "<b>" + esc(email) + "</b> — " + esc(text); };
+  }
+  function sendLinks(emails, isResend) {
+    var ul = statusBox(), out = [];
+    var set = emails.map(function (em) { var f = line(ul, em); f("wait", "waiting…"); return f; });
+    return emails.reduce(function (p, em, i) {
+      return p.then(function () {
+        set[i]("wait", "sending…");
+        return Promise.resolve(otp(em)).then(function (r) { return r && r.error ? Promise.reject(r.error) : r; }).then(function () {
+          set[i]("ok", (isResend ? "New link sent ✓" : "Sent ✓") + " " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })); out.push({ email: em, ok: true });
+        }, function (err) { set[i]("err", sendReason(err)); out.push({ email: em, ok: false }); })
+          .then(function () { if (i < emails.length - 1) return new Promise(function (ok) { setTimeout(ok, GAP_MS); }); });
+      });
+    }, Promise.resolve()).then(function () { return out; });
+  }
+
   $("inviteForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var m = $("inviteMsg"), emails = $("inviteEmails").value.split(/[\s,;]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
     var bad = emails.filter(function (s) { return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); });
     if (!emails.length) return say(m, "Type at least one email.", "err");
     if (bad.length) return say(m, "These don’t look like emails: " + bad.join(", "), "err");
-    if (AD30.demo) return say(m, "Demo: would add " + emails.join(", "), "ok");
-    AD30.sb.from("invites").upsert(emails.map(function (x) { return { email: x }; }), { onConflict: "email", ignoreDuplicates: true }).then(function (r) {
-      if (r.error) return say(m, r.error.message, "err");
-      say(m, "Added " + emails.length + ". Now send them the link: " + siteUrl(), "ok"); $("inviteEmails").value = ""; refresh();
-    });
+    emails = emails.filter(function (x, i) { return emails.indexOf(x) === i; });
+    if (emails.length > MAX_AT_ONCE && !confirm("That’s " + emails.length + " emails. The site can send about 30 sign-in emails an hour, so some may fail with “try again later”. Send to all of them anyway?")) return;
+    var btn = $("inviteForm").querySelector("button[type=submit]"); btn.disabled = true;
+    var up = AD30.demo ? Promise.resolve({}) : AD30.sb.from("invites").upsert(emails.map(function (x) { return { email: x }; }), { onConflict: "email", ignoreDuplicates: true });
+    up.then(function (r) {
+      if (r.error) { btn.disabled = false; return say(m, r.error.message, "err"); }
+      say(m, "Added " + emails.length + " to the list. Sending each one a sign-in email…", "ok"); $("inviteEmails").value = "";
+      return sendLinks(emails, false).then(function (res) {
+        btn.disabled = false;
+        var ok = res.filter(function (x) { return x.ok; }).length;
+        say(m, ok === res.length ? "Done ✓ " + ok + " sign-in email" + (ok === 1 ? "" : "s") + " sent. They tap the link in the email (or type the code) to get in." :
+          ok + " of " + res.length + " sent. See the list below — you can tap Resend link later for the ones that failed.", ok === res.length ? "ok" : "err");
+        if (!AD30.demo) refresh();
+      });
+    }, function (e) { btn.disabled = false; say(m, String((e && e.message) || e), "err"); });
   });
 
   $("refForm").addEventListener("submit", function (e) {
