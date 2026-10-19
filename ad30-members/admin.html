@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/resources.css">
 <link rel="stylesheet" href="css/timeline-placer.css"><!-- [timeline-v3] -->
 <!-- [chat] private chat with the Admins -->
+<link rel="stylesheet" href="css/tab-editor.css"><!-- [edit-tabs] -->
 <link rel="stylesheet" href="css/chat.css">
 <style>/* [admin-combined] the old add-forms only open when Edit is tapped */
 #lxAdmin:has(#lxCancel[hidden]) > #lxH, #lxAdmin:has(#lxCancel[hidden]) > .lx-tip, #lxAdmin:has(#lxCancel[hidden]) #lxForm,
@@ -183,6 +184,21 @@
       <ul class="lx-items" id="rsItems"></ul>
     </section>
 
+    <!-- ===== [edit-tabs] leaders edit any member-view tab (js/tab-editor.js, table section_overrides) ===== -->
+    <section class="lx-admin te-admin" id="teAdmin" aria-labelledby="teH" hidden>
+      <h2 class="serif" id="teH">Edit a tab</h2>
+      <p class="te-hint">Change what members see on any tab. The original is kept, so you can always go back.</p>
+      <label class="te-l" for="tePick">Which tab?</label>
+      <select class="te-in" id="tePick"></select>
+      <div id="teBody"></div>
+      <div class="te-bar">
+        <button type="button" class="te-btn" id="teSave">Save tab</button>
+        <button type="button" class="te-btn2" id="teView">See it</button>
+        <button type="button" class="te-btn2 te-x" id="teReset">Back to the original</button>
+      </div>
+      <p class="te-msg" id="teMsg" role="status" aria-live="polite"></p>
+    </section>
+
     <p class="hint" id="updated"></p>
     <div class="cards" id="stats"></div>
 
@@ -261,6 +277,9 @@
 <script src="js/combined-admin.js"></script>
 <script src="js/notes-edit.js"></script><!-- [pdf-edit-fix] -->
 <script src="js/timeline-placer.js"></script><!-- [timeline-v3] drag-and-drop / Move to… onto a timeline spot -->
+<script src="js/simple-data.js"></script><!-- [edit-tabs] built-in tab text -->
+<script src="js/section-overrides.js"></script><!-- [edit-tabs] -->
+<script src="js/tab-editor.js"></script><!-- [edit-tabs] -->
 <script src="js/admin.js"></script>
 <!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->
 <script src="js/chat.js"></script>

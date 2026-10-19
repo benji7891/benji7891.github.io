@@ -64,7 +64,7 @@
   function norm(s) { return String(s || "").toLowerCase().replace(/[“”"’']/g, "").replace(/[^a-z0-9]+/g, " ").trim(); }
   function build(sheetVideos) {
     SECTIONS = (DATA.sections || []).map(function (s) {
-      var c = Object.assign({}, s); c.videos = s.video ? [s.video] : []; return c;
+      var c = window.AD30SO ? window.AD30SO.apply(s) : Object.assign({}, s); c.videos = s.video ? [s.video] : []; return c;   // [edit-tabs] leader edits over the built-in text
     });
     (sheetVideos || []).forEach(function (v) {        // videos Sam adds in the Google Sheet (same matching as app.js)
       var key = norm(v.marker), sec = null;
@@ -76,6 +76,7 @@
         description: "", verses: v.verse ? [{ ref: v.ref, text: v.verse, typed: v.verseFrom === "sheet" }] : [],
         teaching: [], videos: [v], aliases: [], timelineIds: [] });
     });
+    if (window.AD30SO) SECTIONS = window.AD30SO.arrange(SECTIONS);   // [edit-tabs] tab order / hidden tabs
   }
   function byId(id) { for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i].id === id) return i; return -1; }
 
@@ -177,13 +178,14 @@
   function scriptureHead(tagName) {
     return '<' + tagName + ' class="sx-sh"><span class="sx-tag">TEXT</span> What Scripture says (KJV)</' + tagName + '>';
   }
+  function shown(s, part) { return !window.AD30SO || window.AD30SO.shown(s, part); }   // [edit-tabs]
   function lessonPanel(s, el, i) {
     var h = "";
     var when = [s.date, s.dateNote].filter(Boolean).join(" · ");   // same "date · where it comes from" line the old card showed
-    if (when) h += '<p class="sx-when">' + esc(when) + '</p>';
-    if (s.description) h += '<p class="sx-desc">' + esc(s.description) + '</p>';
+    if (when && shown(s, "date")) h += '<p class="sx-when">' + esc(when) + '</p>';
+    if (s.description && shown(s, "description")) h += '<p class="sx-desc">' + esc(s.description) + '</p>';
     h += '<div class="sx-videos"></div>';
-    if (s.verses.length) {
+    if (s.verses.length && shown(s, "scripture")) {
       h += '<div class="sx-scrip">' + scriptureHead("h3");
       s.verses.slice(0, PANEL_VERSES).forEach(function (v) { h += verseHtml(v, "sx-v"); });
       var more = s.verses.length - PANEL_VERSES;
@@ -203,6 +205,22 @@
     var nx = el.querySelector(".sx-next");
     if (nx) { nx.querySelector("span").textContent = SECTIONS[i + 1].title; nx.addEventListener("click", function () { openSection(i + 1); }); }
     ext("panel", s, el, i);   // [lessons-merge] video lessons for this section (before the Study notes button)
+    arrangeParts(s, el);
+  }
+  // [edit-tabs] hide / reorder the parts of an opened tab (Share / Next stay last)
+  function arrangeParts(s, el) {
+    var parts = { description: ".sx-desc", videos: ".sx-videos", scripture: ".sx-scrip", spots: ".lxm-spots", notes: ".sx-notes" };
+    if (!shown(s, "videos")) { var vb = el.querySelector(".sx-videos"); if (vb) vb.hidden = true; }
+    if (!shown(s, "spots")) { var sb = el.querySelector(".lxm-spots"); if (sb) sb.hidden = true; }
+    if (!shown(s, "notes")) { var nb = el.querySelector(".sx-notes"); if (nb) nb.hidden = true; }
+    if (!s.order || !s.order.length) return;
+    var row = el.querySelector(".sx-row"), order = s.order.slice();
+    Object.keys(parts).forEach(function (p) { if (order.indexOf(p) < 0) order.push(p); });
+    order.forEach(function (p) {
+      var n = el.querySelector(parts[p]); if (!n || n.parentNode !== el) return;
+      el.insertBefore(n, row);
+      if (p === "spots") { var rs = el.querySelector(".rsm"); if (rs && rs.parentNode === el) el.insertBefore(rs, row); }
+    });
   }
 
   /* ---------- videos (inline players + the same progress logging as before) ---------- */
@@ -339,6 +357,8 @@
     if (when) h += '<p class="nt-date">' + esc(when) + '</p>';
     h += '</header>';
     if (s.description) h += '<p class="nt-desc">' + esc(s.description) + '</p>';
+    if (s.notesText) h += '<section class="nt-lead"><h2 class="nt-th">Notes from the group leaders</h2>' +   // [edit-tabs]
+      s.notesText.split(/\n\s*\n/).map(function (p) { return '<p>' + esc(p.trim()).replace(/\n/g, "<br>") + '</p>'; }).join("") + '</section>';
     if (s.verses.length) {
       h += '<section class="nt-scrip">' + scriptureHead("h2");
       s.verses.forEach(function (v) { h += verseHtml(v, "nt-v"); });
@@ -532,6 +552,9 @@
     LS.del("ad30m.deeplink");
     if (!h) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
     if (want) openFromId(want);           // built-in sections can open straight away
+    if (window.AD30SO) window.AD30SO.load().then(function () {   // [edit-tabs] fresh leader edits from the database
+      build((window.__ad30sheet && window.__ad30sheet.videos) || []); render();
+    });
     AD30.loadVideos().then(function (s) {
       window.__ad30sheet = s;
       if (s.videos && s.videos.length) { build(s.videos); render(); if (want && openIdx < 0 && notes.hidden) openFromId(want); }

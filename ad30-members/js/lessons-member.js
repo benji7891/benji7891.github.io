@@ -103,7 +103,7 @@
   // Members see only the date added: the timeline marker's own title/date are Teacher-view wording (some carry
   // placement notes), and the lesson already sits inside its section.
   function whereLine(row) { var dt = L.TD ? L.TD.text(row) : ""; return (dt ? "📅 " + dt + " · " : "") + "Added " + L.dateLabel(row.created_at); }   // [timeline-dates]
-  function lessonBlock(row, prefix, feat) {
+  function lessonBlock(row, prefix, feat, noVerses) {
     var id = L.vkey(row), el = document.createElement("article");
     el.className = "lxm-l"; el.id = prefix + id; el.setAttribute("data-lx", id);
     var sum = L.summaryHTML(row.summary);
@@ -114,14 +114,14 @@
       '<div class="lx-media lxm-media"><button type="button" class="lx-thumb" aria-label="Play video: ' + esc(row.title) + '">' +
         '<img alt="" loading="lazy" decoding="async"' + L.thumbAttrs(row) + '><span class="lx-play" aria-hidden="true"></span></button></div>' +
       (sum ? '<div class="lxm-sum"><p class="lxm-lab"><span class="lxm-tag">LESSON SUMMARY</span> <span class="lxm-labt">from the Admin — teaching, not Scripture</span></p><div class="lx-text">' + sum + "</div></div>" : "") +
-      versesBox(row.verse_refs, false) +
+      (noVerses ? "" : versesBox(row.verse_refs, false)) +   // [edit-tabs] the tab's "KJV verse box on each lesson" is off
       // [studynote-fix] the lesson's own study guide (PDF / Drive link) goes right here, filled by js/resources.js
       '<div class="lxm-guide" hidden data-lxg-m="' + esc(row.marker_id || "") + '" data-lxg-t="' + esc(row.title) + '" data-lxg-c="' + esc(row.created_at || "") + '"' + (feat ? ' data-lxg-f="1"' : "") + ' data-lxg-id="' + esc(row.id != null ? row.id : "") + '"></div>';
     el.querySelector(".lx-thumb").addEventListener("click", function () {
       L.player(el.querySelector(".lxm-media"), row);
       AD30.track("card_open", { marker_id: row.marker_id || "lessons", video_id: id, video_title: String(row.title).slice(0, 200) });
     });
-    fillVerses(el.querySelector(".lxm-verses[data-refs]"));
+    var vb = el.querySelector(".lxm-verses[data-refs]"); if (vb) fillVerses(vb);
     if (R() && R().guides) try { R().guides(el); } catch (e) {}   // [studynote-fix]
     return el;
   }
@@ -135,24 +135,37 @@
     var spots = spotsFor(secId), rows = lessonsFor(secId); if (!spots.length && !rows.length) return null;
     var box = document.createElement("div"); box.className = "lxm lxm-spots"; box.setAttribute("data-sec", secId);
     var n = rows.length;
-    box.innerHTML = '<h3 class="lxm-h2">On the timeline <small>' + spots.length + (spots.length === 1 ? " spot" : " spots") +
+    // [edit-tabs] leader edits: renamed / redated / hidden / reordered spots, hidden headings, no lesson KJV box
+    var so = null; sections().forEach(function (x) { if (x.id === secId) so = x; });
+    if (window.AD30SO && so) spots = window.AD30SO.spots(so, spots);
+    var hideTH = !!(so && so.show && so.show.timelineHeading === false), nv = !!(so && so.hideLessonScripture);
+    if (!hideTH) box.innerHTML = '<h3 class="lxm-h2">On the timeline <small>' + spots.length + (spots.length === 1 ? " spot" : " spots") +
       (n ? " · " + n + (n === 1 ? " lesson" : " lessons") : "") + "</small></h3>";
     var grp = null, seen = {};
+    var sp, hiddenSpots = (so && so.spotEdits) || {};   // [edit-tabs] lessons on a hidden spot stay hidden in this tab
+    rows.forEach(function (r) { if (hiddenSpots[r.marker_id] && hiddenSpots[r.marker_id].hidden) seen[L.vkey(r)] = 1; });
     spots.forEach(function (m) {
-      if (m.sec !== grp) { grp = m.sec; var g = document.createElement("h4"); g.className = "lxm-grp"; g.textContent = m.sec; box.appendChild(g); }
+      if (m.hideHeading) {   // [edit-tabs] this spot's date and title hidden; its lessons and files still show
+        sp = document.createElement("section"); sp.className = "lxm-spot lxm-bare"; sp.id = "spot-" + m.id; sp.setAttribute("data-spot", m.id);
+        var hh = rows.filter(function (r) { return r.marker_id === m.id; }); if (L.TD) hh = L.TD.sort(hh);
+        hh.forEach(function (r) { seen[L.vkey(r)] = 1; sp.appendChild(lessonBlock(r, "lxm-", null, nv)); });
+        var hf = document.createElement("div"); hf.className = "lxm-files"; hf.hidden = true; hf.setAttribute("data-spot-files", m.id);
+        sp.appendChild(hf); box.appendChild(sp); return;
+      }
+      if (m.sec !== grp && !hideTH) { grp = m.sec; var g = document.createElement("h4"); g.className = "lxm-grp"; g.textContent = m.sec; box.appendChild(g); }
       var here = rows.filter(function (r) { return r.marker_id === m.id; });
       if (L.TD) here = L.TD.sort(here);   // [timeline-dates]
       here.forEach(function (r) { seen[L.vkey(r)] = 1; });
-      var sp = document.createElement("section"); sp.className = "lxm-spot" + (here.length ? "" : " lxm-spot-empty"); sp.id = "spot-" + m.id; sp.setAttribute("data-spot", m.id);
-      sp.innerHTML = '<p class="lxm-sd">' + esc(L.shortDate(m.dt)) + '</p><h4 class="lxm-st serif">' + esc(m.ttl) + "</h4>" +
+      sp = document.createElement("section"); sp.className = "lxm-spot" + (here.length ? "" : " lxm-spot-empty"); sp.id = "spot-" + m.id; sp.setAttribute("data-spot", m.id);
+      sp.innerHTML = '<p class="lxm-sd">' + esc(m.dtLiteral ? m.dt : L.shortDate(m.dt)) + '</p><h4 class="lxm-st serif">' + esc(m.ttl) + "</h4>" +
         (here.length ? "" : '<p class="lxm-none">No lesson yet</p>');
-      here.forEach(function (r) { sp.appendChild(lessonBlock(r, "lxm-")); });
+      here.forEach(function (r) { sp.appendChild(lessonBlock(r, "lxm-", null, nv)); });
       var files = document.createElement("div"); files.className = "lxm-files"; files.hidden = true; files.setAttribute("data-spot-files", m.id);
       sp.appendChild(files);
       box.appendChild(sp);
     });
     // a lesson whose spot is not in the built-in list (shouldn't happen): still shown, at the end
-    rows.forEach(function (r) { if (!seen[L.vkey(r)]) box.appendChild(lessonBlock(r, "lxm-")); });
+    rows.forEach(function (r) { if (!seen[L.vkey(r)]) box.appendChild(lessonBlock(r, "lxm-", null, nv)); });
     if (R() && R().spotFiles) try { R().spotFiles(box); } catch (e) {}
     return box;
   }

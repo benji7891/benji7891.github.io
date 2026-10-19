@@ -1,0 +1,29 @@
+/* [edit-tabs] admin "Edit a tab" - big touch targets, one column, phone first */
+.te-admin .te-hint{color:var(--muted,#a9a59c); font-size:15px; margin:6px 0 10px}
+.te-l{display:block; font-size:16px; font-weight:600; margin:14px 0 6px; color:var(--text,#ece8df)}
+.te-in{display:block; width:100%; box-sizing:border-box; font:inherit; font-size:17px; padding:11px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.25); color:var(--text,#ece8df); margin:0 0 8px}
+textarea.te-in{resize:vertical; line-height:1.4}
+.te-num{max-width:120px}
+.te-g{border-top:1px solid rgba(255,255,255,.12); margin-top:12px; padding-top:4px}
+.te-g>summary{font-size:19px; font-weight:700; padding:12px 0; cursor:pointer; color:var(--gold,#d9b870); list-style-position:outside}
+.te-chk{display:flex; align-items:center; gap:12px; min-height:44px; font-size:17px}
+.te-chk input{width:24px; height:24px; flex:none; accent-color:var(--gold,#d9b870)}
+.te-warn{color:#f0a07a}
+.te-list{list-style:none; margin:0; padding:0}
+.te-row{display:flex; align-items:center; gap:8px; min-height:48px; border-bottom:1px solid rgba(255,255,255,.08)}
+.te-rt{flex:1; font-size:17px}
+.te-card{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:10px 12px 6px; margin:10px 0}
+.te-card.te-off{opacity:.5}
+.te-ch{display:flex; align-items:center; gap:8px; font-weight:600; margin-bottom:8px}
+.te-ud{margin-left:auto; display:flex; gap:6px}
+.te-mini{min-width:44px; min-height:40px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit; font-size:18px}
+.te-mini:disabled{opacity:.3}
+.te-mini.te-x{font-size:14px; padding:0 10px}
+.te-bar{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; position:sticky; bottom:0; background:var(--panel,#171b22); padding:10px 0}
+.te-btn,.te-btn2{min-height:48px; border-radius:24px; font:inherit; font-size:17px; font-weight:700; padding:0 20px}
+.te-btn{background:var(--gold,#d9b870); color:#1a1408; border:0; flex:1 1 100%}
+.te-btn2{background:transparent; color:var(--text,#ece8df); border:1px solid rgba(255,255,255,.3)}
+.te-x{color:#f0a07a}
+.te-msg{min-height:22px; font-size:16px; margin:6px 0 0}
+.te-msg.ok{color:#9fd59a} .te-msg.bad{color:#f0a07a}

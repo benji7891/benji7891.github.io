@@ -118,3 +118,8 @@
 .lxm-mfiles{margin-top:22px}
 .lxm-mfiles[hidden], .lxm-files[hidden]{display:none}
 .lxm-mfiles .rs-item + .rs-item, .lxm-files .rs-item + .rs-item{margin-top:12px}
+
+/* [edit-tabs] a spot whose date & title a leader hid: no timeline line or dot; hidden if it holds nothing */
+.lxm-bare{padding:0; border-left:0}
+.lxm-bare::before{display:none}
+.lxm-bare:not(:has(.lxm-l)):not(:has(.rs-item)){display:none}
