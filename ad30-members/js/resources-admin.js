@@ -126,6 +126,7 @@
     var msg = $("rsMsg"), title = $("rsTitle").value.trim(), m = mode();
     var row = { title: title.slice(0, 200), note: $("rsNote").value.trim() || null, marker_id: $("rsMarker").value || null };
     if (row.marker_id && !L.validMarker(row.marker_id)) row.marker_id = null;
+    var tdErr = L.TD ? L.TD.apply(row, "rs") : ""; if (tdErr) { say(msg, tdErr, "err"); return; }   // [timeline-dates]
     if (editing) return saveEdit(row, msg);
     if (m === "file") {
       checkFile();
@@ -249,7 +250,7 @@
       var o = document.createElement("option"); o.value = r.marker_id; o.textContent = where(r.marker_id); $("rsMarker").appendChild(o); $("rsMarker").value = r.marker_id;
     }
     if (!isFile) { $("rsUrl").value = r.url || ""; checkLink(true); } else checkFile();
-    $("rsH").textContent = "Edit resource"; $("rsCancel").hidden = false;
+    $("rsH").textContent = "Edit resource"; $("rsCancel").hidden = false; if (L.TD) L.TD.fill("rs", r);   // [timeline-dates]
     setMode();
     say($("rsMsg"), "Editing “" + r.title + "”. Change anything, then tap Save changes.");
     $("rsAdmin").scrollIntoView({ block: "start", behavior: "smooth" });
@@ -263,7 +264,7 @@
     $("rsH").textContent = "Add a resource";
     $("rsForm").reset(); fileState = { error: "empty" }; linkState = { error: "empty" };
     if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (e) {} previewUrl = null; }
-    $("rsFPrev").hidden = true; fillSelect(); setMode(); checkFile(); checkLink(false);
+    $("rsFPrev").hidden = true; fillSelect(); setMode(); checkFile(); checkLink(false); if (L.TD) L.TD.clear("rs");   // [timeline-dates]
     try { document.dispatchEvent(new CustomEvent("ad30:rs-edit", { detail: null })); } catch (e) {}   // [pdf-edit-fix]
   }
 
@@ -290,7 +291,7 @@
     if (!rows.length) { if (!missing) ul.innerHTML = '<li class="lx-empty">No resources yet — add the first one above.</li>'; return; }
     rows.forEach(function (r) {
       var li = document.createElement("li"); li.className = "lx-item rs-aitem" + (r.published === false ? " hidden-l" : ""); li.setAttribute("data-rs", r.id);
-      li.appendChild(R.item(r, { where: where(r.marker_id) + " · added " + L.dateLabel(r.created_at) + (r.created_by ? " by " + r.created_by : "") + (r.size_bytes ? " · " + R.size(r.size_bytes) : "") }));
+      li.appendChild(R.item(r, { where: where(r.marker_id) + (L.TD ? L.TD.suffix(r) : "") + " · added " + L.dateLabel(r.created_at) + (r.created_by ? " by " + r.created_by : "") + (r.size_bytes ? " · " + R.size(r.size_bytes) : "") }));
       var st = document.createElement("span"); st.className = "lx-state " + (r.published === false ? "off" : "on");
       st.textContent = r.published === false ? "Hidden from members" : "Showing on the site"; li.appendChild(st);
       var acts = document.createElement("div"); acts.className = "lx-acts";

@@ -50,6 +50,8 @@
     ev.preventDefault();
     var title = $("cbTitle").value.trim(), v = video(), p = pdf(), marker = $("cbMarker").value || null, note = $("cbNote").value.trim() || null;
     if (marker && !L.validMarker(marker)) marker = null;
+    var td = {}, tdErr = L.TD ? L.TD.apply(td, "cb") : ""; if (tdErr) { say(tdErr, "err"); return; }   // [timeline-dates]
+    if ("marker_id" in td) marker = td.marker_id;
     if (!title) { say("Please type a title.", "err"); $("cbTitle").focus(); return; }
     var hasV = !v.error, hasP = !p.error;
     if (!hasV && !hasP) { say(v.error !== "empty" || p.error !== "empty" ? "Please check the video or PDF link (see the note under it)." : "Add a video link, a PDF, or both.", "err"); return; }
@@ -60,12 +62,14 @@
     if (hasV) step = step.then(function () {
       busy(true, "Saving video…");
       var row = { title: title.slice(0, 200), youtube_url: url.slice(0, 500), youtube_id: v.source === "youtube" ? v.id : null, marker_id: marker, summary: note, verse_refs: null };
+      Object.keys(td).forEach(function (k) { row[k] = td[k]; });   // [timeline-dates]
       if (v.source === "drive") { row.video_source = "drive"; row.drive_id = v.id; }
       return L.save(row, null).then(function (r) { if (r.error) throw r.error; done.push("video"); });
     });
     if (hasP) step = step.then(function () {
       busy(true, p.isFile ? "Uploading PDF…" : "Saving PDF…");
       var row = { title: title.slice(0, 200), note: note, marker_id: marker };
+      Object.keys(td).forEach(function (k) { row[k] = td[k]; });   // [timeline-dates]
       var up = p.isFile ? window.AD30RA.uploadFile(p) : Promise.resolve({ row: { kind: p.kind, url: p.url }, uploaded: [] });
       return up.then(function (u) {
         Object.keys(u.row).forEach(function (k) { row[k] = u.row[k]; });
@@ -76,7 +80,7 @@
       });
     });
     step.then(function () {
-      busy(false); $("cbForm").reset(); setMode(); video();
+      busy(false); $("cbForm").reset(); setMode(); video(); if (L.TD) L.TD.clear("cb");   // [timeline-dates]
       say("Saved ✓ “" + esc(title) + "” — " + done.join(" and ") + " now on the site.", "ok");
     }).catch(function (e) {
       busy(false);

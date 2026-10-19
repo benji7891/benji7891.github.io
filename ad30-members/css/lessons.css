@@ -144,3 +144,14 @@ html.fx-dark .lx-fig .lx-sum{background:#232830; border-left-color:#8c97a6}
 .lx-admin .ne-notes{margin:10px 0 0; padding:10px 12px; border:1px dashed var(--line,#2a303a); border-radius:12px}
 .lx-admin .ne-row + .ne-row{margin-top:8px}
 .lx-admin .ne-edit{width:100%; min-height:46px; margin-top:8px; border-radius:12px; border:1px solid var(--line,#2a303a); background:#232833; color:var(--text,#ece8df); font:inherit}
+/* [timeline-dates] "Or enter a date" */
+.td-box{margin:10px 0 4px; padding:10px 12px; border:1px dashed var(--line,#2a303a); border-radius:12px}
+.td-tog{display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:16px}
+.td-tog small{color:var(--muted,#9a9fa8)}
+.td-tog input{width:22px; height:22px}
+.td-f{margin-top:10px}
+.td-row{display:flex; gap:8px; margin-bottom:8px}
+.td-row .td-era{flex:0 0 92px} .td-row .td-y,.td-row .td-m{flex:1 1 auto} .td-row .td-d{flex:0 0 92px}
+.td-sheet{margin:0 0 12px; padding:10px 12px; border:1px dashed var(--line,#2a303a); border-radius:12px}
+.td-sheet summary{cursor:pointer; min-height:32px}
+.td-go{width:100%; margin-top:6px}

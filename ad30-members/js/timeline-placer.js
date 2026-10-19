@@ -25,23 +25,31 @@
   }
 
   /* ---------- saving ---------- */
-  function saveOne(kind, row, marker) {
-    if (kind === "lesson") return L.save({ marker_id: marker }, row.id).then(function (r) { if (r.error) throw r.error; return r; });
-    if (AD30.demo || !AD30.sb) { row.marker_id = marker; return Promise.resolve({}); }   // demo / preview: nothing is sent
-    return R.timeout(AD30.sb.from("resources").update({ marker_id: marker }).eq("id", row.id).select("id,marker_id"), 15000).then(function (r) {
+  function dateFields(row, marker, t) {   // [timeline-dates] t = a date, null = clear the date, undefined = leave it
+    var o = { marker_id: marker };
+    if (L.TD && L.TD.ready && t !== undefined) { L.TD.put(o, t); if (t) o.marker_id = marker; }
+    return o;
+  }
+  function saveOne(kind, row, marker, t) {
+    var f = dateFields(row, marker, t);
+    if (kind === "lesson") return L.save(f, row.id).then(function (r) { if (r.error) throw r.error; return r; });
+    if (AD30.demo || !AD30.sb) { Object.keys(f).forEach(function (k) { row[k] = f[k]; }); return Promise.resolve({}); }   // demo / preview: nothing is sent
+    return R.timeout(AD30.sb.from("resources").update(f).eq("id", row.id).select("id,marker_id"), 15000).then(function (r) {
       if (r.error || !r.data || !r.data.length) throw r.error || { message: "Nothing changed. The database may not allow edits yet (migrations/2026-10-16_resources_edit.sql)." };
       return r;
     });
   }
-  function move(kind, row, marker, withNotes) {
+  function move(kind, row, marker, withNotes, t) {
     if (marker && !L.validMarker(marker)) return;
-    if ((row.marker_id || null) === (marker || null)) { toast("“" + row.title + "” is already at " + label(marker) + "."); return; }
-    var jobs = [{ kind: kind, row: row, from: row.marker_id || null }];
-    if (kind === "lesson" && withNotes) notesFor(row).forEach(function (r) { if ((r.marker_id || null) !== (marker || null)) jobs.push({ kind: "resource", row: r, from: r.marker_id || null }); });
+    var TD = L.TD && L.TD.ready ? L.TD : null, had = TD && TD.of(row);   // [timeline-dates]
+    if (t) { var pl = TD.place(t); marker = pl ? pl.id : null; } else if (TD) t = null;
+    if (!t && !had && (row.marker_id || null) === (marker || null)) { toast("“" + row.title + "” is already at " + label(marker) + "."); return; }
+    var jobs = [{ kind: kind, row: row, from: row.marker_id || null, fromT: TD ? TD.of(row) : undefined }];
+    if (kind === "lesson" && withNotes) notesFor(row).forEach(function (r) { if (t || (r.marker_id || null) !== (marker || null)) jobs.push({ kind: "resource", row: r, from: r.marker_id || null, fromT: TD ? TD.of(r) : undefined }); });
     toast("Saving…");
-    return run(jobs, marker || null).then(function () {
+    return jobs.reduce(function (p, j) { return p.then(function () { return saveOne(j.kind, j.row, marker || null, TD ? t : undefined); }); }, Promise.resolve()).then(function () {
       lastUndo = jobs;
-      toast("Moved “" + row.title + "”" + (jobs.length > 1 ? " and its Study notes" : "") + " to " + label(marker) + ".", true);
+      toast("Moved “" + row.title + "”" + (jobs.length > 1 ? " and its Study notes" : "") + " to " + (t ? "📅 " + TD.fmt(t) + " — " : "") + label(marker) + ".", true);
     }, function (e) {
       toast("That didn’t save: " + (/42501|row-level|permission/i.test(String((e && (e.message || e.code)) || e)) ? "this email isn’t on the database’s Admin list." : String((e && (e.message || e.code)) || e)));
     }).then(reload);
@@ -52,7 +60,7 @@
   function undo() {
     var jobs = lastUndo; lastUndo = null; if (!jobs) return;
     toast("Undoing…");
-    jobs.reduce(function (p, j) { return p.then(function () { return saveOne(j.kind, j.row, j.from); }); }, Promise.resolve())
+    jobs.reduce(function (p, j) { return p.then(function () { return saveOne(j.kind, j.row, j.from, j.fromT === undefined ? undefined : j.fromT || null); }); }, Promise.resolve())
       .then(function () { toast("Undone — back where it was."); }, function (e) { toast("Couldn’t undo: " + String((e && e.message) || e)); }).then(reload);
   }
   function reload() {
@@ -90,6 +98,7 @@
       '<div class="tp-head"><h3 id="tpH" class="serif">' + (dragging ? "Drop on a spot" : "Move to…") + '</h3><button type="button" class="tp-x" aria-label="Close">✕</button></div>' +
       '<p class="tp-what">' + (kind === "lesson" ? "Video" : "File") + ": <b>" + esc(row.title) + "</b><br><span>Now: " + esc(label(row.marker_id)) + "</span></p>" +
       (notes.length ? '<label class="tp-notes"><input type="checkbox" checked> Also move its Study notes: “' + esc(notes.map(function (n) { return n.title; }).join("”, “")) + "”</label>" : "") +
+      (L.TD ? L.TD.sheetHTML(row) : "") +   // [timeline-dates]
       '<div class="tp-list">' + outlineHTML(row.marker_id || null) + "</div></div>";
     document.body.appendChild(sheet);
     document.documentElement.classList.add("tp-open");
@@ -98,7 +107,8 @@
     [].forEach.call(sheet.querySelectorAll(".tp-spot"), function (b) {
       b.addEventListener("click", function () { if (sheet.classList.contains("tp-dragging")) return; pick(b.getAttribute("data-spot")); });
     });
-    var now = sheet.querySelector(".tp-now"); if (now && !dragging) { var sp = now.closest(".tp-spot"); setTimeout(function () { sp.scrollIntoView({ block: "center" }); sp.focus(); }, 0); }
+    if (L.TD && !dragging) L.TD.wireSheet(sheet, row, function (t) { var c = cur, n = withNotes(); closeSheet(); if (c) move(c.kind, c.row, null, n, t); });   // [timeline-dates]
+    var now = sheet.querySelector(".tp-now"); if (now && !dragging && !(L.TD && L.TD.of(row))) { var sp = now.closest(".tp-spot"); setTimeout(function () { sp.scrollIntoView({ block: "center" }); sp.focus(); }, 0); }
     else sheet.querySelector(".tp-x").focus();
     return sheet;
   }

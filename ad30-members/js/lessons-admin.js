@@ -154,7 +154,7 @@
     return true;
   }
   function clearForm() {
-    editing = null; $("lxForm").reset(); fillSelect(""); LS.del(DRAFT);
+    editing = null; $("lxForm").reset(); fillSelect(""); LS.del(DRAFT); if (L.TD) L.TD.clear("lx");   // [timeline-dates]
     $("lxSave").textContent = "Save lesson"; $("lxCancel").hidden = true; $("lxH").textContent = "Add a lesson";
     $("lxPrev").hidden = true; drivePreview(null); $("lxVerses").innerHTML = ""; urlState = { error: "empty" }; checkUrl(false);
   }
@@ -163,7 +163,7 @@
     $("lxTitle").value = r.title || ""; $("lxUrl").value = r.youtube_url || ""; fillSelect(r.marker_id || "");
     $("lxSummary").value = r.summary || ""; $("lxRefs").value = r.verse_refs || "";
     $("lxSave").textContent = "Save changes"; $("lxCancel").hidden = false; $("lxH").textContent = "Edit lesson";
-    checkUrl(true); checkRefs();
+    checkUrl(true); checkRefs(); if (L.TD) L.TD.fill("lx", r);   // [timeline-dates]
     if (!quiet) { say($("lxMsg"), "Editing “" + r.title + "”. Change anything, then tap Save changes."); $("lxAdmin").scrollIntoView({ block: "start", behavior: "smooth" }); }
   }
 
@@ -192,6 +192,7 @@
     if (y.source === "drive") { row.video_source = "drive"; row.drive_id = y.id; }
     else if (editing && L.src(editing) === "drive") { row.video_source = "youtube"; row.drive_id = null; }
     if (row.marker_id && !L.validMarker(row.marker_id)) row.marker_id = null;
+    var tdErr = L.TD ? L.TD.apply(row, "lx") : ""; if (tdErr) { say(msg, tdErr, "err"); return; }   // [timeline-dates]
     btn.disabled = true; btn.textContent = "Saving…"; say(msg, "");
     var wasEditing = editing;
     L.save(row, wasEditing && wasEditing.id).then(function (r) {
@@ -228,7 +229,7 @@
       li.className = "lx-item" + (r.published ? "" : " hidden-l"); li.setAttribute("data-lid", r.id);   // [timeline-v3] js/timeline-placer.js
       li.innerHTML = '<div class="lx-item-top">' + (ok ? '<span class="lx-thumb"><img alt="" loading="lazy"' + L.thumbAttrs(r) + '></span>' : "") +
         '<div><p class="lx-item-t">' + esc(r.title) + "</p>" +
-        '<p class="lx-item-m">' + (src === "drive" ? "Google Drive video · " : src === "youtube" ? "YouTube video · " : "") + esc(where(r.marker_id)) + "</p>" +
+        '<p class="lx-item-m">' + (src === "drive" ? "Google Drive video · " : src === "youtube" ? "YouTube video · " : "") + esc(where(r.marker_id) + (L.TD ? L.TD.suffix(r) : "")) + "</p>" +
         '<p class="lx-item-m">Added ' + esc(L.dateLabel(r.created_at)) + (r.created_by ? " by " + esc(r.created_by) : "") + (r.verse_refs ? " · " + esc(r.verse_refs) : "") + "</p>" +
         '<span class="lx-state ' + (r.published ? "on" : "off") + '">' + (r.published ? "Showing on the site" : "Hidden from members") + "</span>" +
         (ok ? "" : '<p class="lx-warn">This link has no playable video — tap Edit and paste the link again.</p>') +

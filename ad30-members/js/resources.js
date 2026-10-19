@@ -25,7 +25,8 @@
     "image/webp": { kind: "image", ext: "webp" }
   };
   var EXT = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
-  var COLS = "id,created_at,created_by,title,note,kind,storage_path,thumb_path,url,mime,size_bytes,marker_id,sort_order,published";
+  var COLS_OLD = "id,created_at,created_by,title,note,kind,storage_path,thumb_path,url,mime,size_bytes,marker_id,sort_order,published";
+  var COLS = COLS_OLD + ",timeline_year,timeline_month,timeline_day,timeline_label";   // [timeline-dates] falls back to COLS_OLD until the migration is run
   var PATH_RE = /^[0-9]{4}\/[0-9]{2}\/[A-Za-z0-9_-]{16,64}\/[A-Za-z0-9._-]{1,120}$/;
 
   /* ---------- checks (also used by the admin card) ---------- */
@@ -76,9 +77,11 @@
   R.fetch = function (opts) {
     opts = opts || {};
     if (AD30.demo || !AD30.sb) return Promise.resolve({ rows: [], error: AD30.demo ? null : "not connected" });
-    var q = AD30.sb.from("resources").select(COLS);
-    if (!opts.all) q = q.eq("published", true);
-    return timeout(q.order("created_at", { ascending: false }).limit(300), opts.ms || 9000).then(function (r) {
+    var query = function () { var q = AD30.sb.from("resources").select(COLS); if (!opts.all) q = q.eq("published", true); return timeout(q.order("created_at", { ascending: false }).limit(300), opts.ms || 9000); };
+    return query().then(function (r) {   // [timeline-dates] column not there yet -> old column list
+      if (r.error && COLS !== COLS_OLD && (r.error.code === "42703" || /column .* does not exist/i.test(r.error.message || ""))) { COLS = COLS_OLD; return query(); }
+      return r;
+    }).then(function (r) {
       if (r.error) throw r.status === 404 ? { code: "PGRST205", message: "The resources table doesn't exist yet (HTTP 404)" } : r.error;
       return { rows: (r.data || []).filter(function (x) { return x && String(x.title || "").trim() && (x.url || PATH_RE.test(x.storage_path || "")); }) };
     }).catch(function (e) { return { rows: [], error: String((e && e.message) || e), missing: R.isMissingTable(e) }; });
@@ -235,8 +238,9 @@
     if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) return;
     [].forEach.call((scope || document).querySelectorAll("[data-spot-files]"), function (box) {
       var id = box.getAttribute("data-spot-files"), list = ROWS.filter(function (r) { return r.marker_id === id && !isLessonGuide(r); }).sort(byOrder);
+      if (L && L.TD) list = L.TD.sort(list);   // [timeline-dates]
       box.innerHTML = ""; box.hidden = !list.length;
-      list.forEach(function (r) { box.appendChild(R.item(r, { id: "rsm-" + r.id, where: "Added " + dateLabel(r.created_at) })); });
+      list.forEach(function (r) { var dt = L && L.TD ? L.TD.text(r) : ""; box.appendChild(R.item(r, { id: "rsm-" + r.id, where: (dt ? "📅 " + dt + " · " : "") + "Added " + dateLabel(r.created_at) })); });
       var sp = box.closest ? box.closest(".lxm-spot") : null, none = sp && sp.querySelector(".lxm-none");
       if (none) none.hidden = !!list.length;
       if (sp && list.length) sp.classList.remove("lxm-spot-empty");

@@ -102,7 +102,7 @@
   /* ---------- one lesson (in a section, or a General one in "Latest lessons") ---------- */
   // Members see only the date added: the timeline marker's own title/date are Teacher-view wording (some carry
   // placement notes), and the lesson already sits inside its section.
-  function whereLine(row) { return "Added " + L.dateLabel(row.created_at); }
+  function whereLine(row) { var dt = L.TD ? L.TD.text(row) : ""; return (dt ? "📅 " + dt + " · " : "") + "Added " + L.dateLabel(row.created_at); }   // [timeline-dates]
   function lessonBlock(row, prefix, feat) {
     var id = L.vkey(row), el = document.createElement("article");
     el.className = "lxm-l"; el.id = prefix + id; el.setAttribute("data-lx", id);
@@ -141,6 +141,7 @@
     spots.forEach(function (m) {
       if (m.sec !== grp) { grp = m.sec; var g = document.createElement("h4"); g.className = "lxm-grp"; g.textContent = m.sec; box.appendChild(g); }
       var here = rows.filter(function (r) { return r.marker_id === m.id; });
+      if (L.TD) here = L.TD.sort(here);   // [timeline-dates]
       here.forEach(function (r) { seen[L.vkey(r)] = 1; });
       var sp = document.createElement("section"); sp.className = "lxm-spot" + (here.length ? "" : " lxm-spot-empty"); sp.id = "spot-" + m.id; sp.setAttribute("data-spot", m.id);
       sp.innerHTML = '<p class="lxm-sd">' + esc(L.shortDate(m.dt)) + '</p><h4 class="lxm-st serif">' + esc(m.ttl) + "</h4>" +
