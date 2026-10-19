@@ -140,3 +140,7 @@ html.fx-dark .lx-fig .lx-sum{background:#232830; border-left-color:#8c97a6}
   .lx-admin .lx-dprev{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:14px; align-items:start}
   .lx-admin .lx-dprev .lx-share{margin:0}
 }
+/* [pdf-edit-fix] Study notes on each video card */
+.lx-admin .ne-notes{margin:10px 0 0; padding:10px 12px; border:1px dashed var(--line,#2a303a); border-radius:12px}
+.lx-admin .ne-row + .ne-row{margin-top:8px}
+.lx-admin .ne-edit{width:100%; min-height:46px; margin-top:8px; border-radius:12px; border:1px solid var(--line,#2a303a); background:#232833; color:var(--text,#ece8df); font:inherit}

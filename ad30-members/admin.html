@@ -160,6 +160,12 @@
         <textarea class="field" id="rsNote" rows="4" maxlength="5000" placeholder="A sentence or two: what it is and why it helps."></textarea>
         <p class="lx-help">This is <b>your note as Admin — not Scripture</b>. Members see it under the label <b>ADMIN’S NOTE</b>, kept separate from the Bible text.</p>
 
+        <div id="neLessonBox" hidden><!-- [pdf-edit-fix] js/notes-edit.js -->
+          <label class="lx-l" for="neLesson">Goes with lesson <small>(optional)</small></label>
+          <select class="field" id="neLesson"><option value="">— Not tied to a video —</option></select>
+          <p class="lx-help" id="neLessonMsg">Pick a video and this PDF becomes its <b>Study notes</b>: the title and timeline spot are set to match it.</p>
+        </div>
+
         <label class="lx-l" for="rsMarker">Where on the timeline <small>(optional)</small></label>
         <select class="field" id="rsMarker"><option value="">More lessons (no timeline date)</option></select>
         <p class="lx-help">Every resource shows under “Resources” on the member page. Pick a date or feast to show it inside that section too. With “More lessons”, a PDF with the same title as a More lessons lesson shows as that lesson’s Study notes.</p>
@@ -251,6 +257,7 @@
 <script src="js/resources.js"></script>
 <script src="js/resources-admin.js"></script>
 <script src="js/combined-admin.js"></script>
+<script src="js/notes-edit.js"></script><!-- [pdf-edit-fix] -->
 <script src="js/timeline-placer.js"></script><!-- [timeline-v3] drag-and-drop / Move to… onto a timeline spot -->
 <script src="js/admin.js"></script>
 <!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->

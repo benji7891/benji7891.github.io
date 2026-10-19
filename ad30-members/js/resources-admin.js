@@ -212,6 +212,7 @@
       row.url = linkState.url; row.kind = linkState.kind;
     }
     busy(true, "Saving…");
+    if (AD30.demo && !AD30.sb) { for (var dk in row) ed[dk] = row[dk]; editing = null; busy(false); clearForm(); say(msg, "Saved ✓ (preview only — nothing was sent) “" + ed.title + "” — " + where(ed.marker_id) + ".", "ok"); paint(); return; }   // [pdf-edit-fix] preview
     var uploaded = [];
     return step.then(function (u) {
       uploaded = u.uploaded; for (var k in u.row) row[k] = u.row[k];
@@ -252,6 +253,7 @@
     setMode();
     say($("rsMsg"), "Editing “" + r.title + "”. Change anything, then tap Save changes.");
     $("rsAdmin").scrollIntoView({ block: "start", behavior: "smooth" });
+    try { document.dispatchEvent(new CustomEvent("ad30:rs-edit", { detail: r })); } catch (e) {}   // [pdf-edit-fix]
   }
   function clearForm() {
     editing = null;
@@ -262,6 +264,7 @@
     $("rsForm").reset(); fileState = { error: "empty" }; linkState = { error: "empty" };
     if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (e) {} previewUrl = null; }
     $("rsFPrev").hidden = true; fillSelect(); setMode(); checkFile(); checkLink(false);
+    try { document.dispatchEvent(new CustomEvent("ad30:rs-edit", { detail: null })); } catch (e) {}   // [pdf-edit-fix]
   }
 
   /* ---------- list + delete ---------- */
@@ -338,6 +341,8 @@
     loadList();
   };
   A.uploadFile = uploadFile; A.reload = function () { return loadList(); };
-  A.rows = function () { return rows; };   // [timeline-v3] js/timeline-placer.js   // [admin-combined] used by the one simple form
+  A.rows = function () { return rows; };
+  A.edit = function (id) { var r = rows.filter(function (x) { return String(x.id) === String(id); })[0]; if (r) setEditing(r); return !!r; };   // [pdf-edit-fix] Edit from a video card
+  A.editing = function () { return editing; };                                                                                              // [pdf-edit-fix]   // [timeline-v3] js/timeline-placer.js   // [admin-combined] used by the one simple form
   A._state = function () { return { rows: rows, editing: editing, missing: missing, file: fileState, link: linkState }; };
 })();
