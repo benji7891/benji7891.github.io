@@ -25,15 +25,11 @@
 <!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
 <link rel="stylesheet" href="css/gtc-layout.css">
 <link rel="stylesheet" href="css/prophetic-clock.css">
-<!-- [clock-off] God's Time Clock is not shown on the member page for anyone (Admins too).
-     It stays on the Teacher view (index.html) and the Admin pages. The page is one centred column. -->
-<style>
-.gtc-rail{display:none !important}
-@media (min-width:900px){
-  .gtc-shell{display:block; padding:0}
-  .gtc-shell > .wrap{margin:0 auto}
-}
-</style>
+<!-- [clock-toggle] Oct 20, 2026: God's Time Clock is back on the left of the member page, with a Show/Hide clock
+     button fixed in the top-left corner (css/clock-toggle.css + js/clock-toggle.js). Default: shown. The choice is
+     remembered on this device (localStorage "ad30.clockShown"). html.gtc-off = hidden -> one centred column like before. -->
+<link rel="stylesheet" href="css/clock-toggle.css">
+<script>try{if(localStorage.getItem("ad30.clockShown")==="0")document.documentElement.className+=" gtc-off";}catch(e){}</script>
 <!-- [chat] private chat with the Admins -->
 <link rel="stylesheet" href="css/chat.css">
 </head>
@@ -177,6 +173,7 @@
 <!-- [clock-panel] God's Time Clock: shared core (date math) then the antique panel -->
 <script src="js/gtc-core.js"></script>
 <script src="js/prophetic-clock.js"></script>
+<script src="js/clock-toggle.js"></script><!-- [clock-toggle] -->
 <!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->
 <script src="js/chat.js"></script>
 </body>
