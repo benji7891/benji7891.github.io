@@ -719,6 +719,11 @@
     f.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
     f.setAttribute("allowfullscreen", ""); f.setAttribute("data-lxdrive", id);
     box.appendChild(f); holder.appendChild(box);
+    var a = document.createElement("a");   // [drive-fallback] Drive sometimes blocks embedded plays ("limit has been hit")
+    a.className = "lx-drive-open"; a.href = "https://drive.google.com/file/d/" + id + "/view"; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Video won\u2019t play? Open it in Google Drive";
+    a.style.cssText = "display:block;margin:0 0 10px;padding:12px;text-align:center;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;text-decoration:none";
+    holder.insertBefore(a, box);   // above the player, clear of the floating chat button
     var s = sentMs[id] || (sentMs[id] = { m: {}, done: false, played: false });
     if (!s.played) { s.played = true; track("video_play", row, { source: "drive" }); }
   }
