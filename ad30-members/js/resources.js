@@ -56,12 +56,15 @@
   };
   R.size = function (n) { return n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; };
   function host(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
+  // [study-notes-label] a PDF placed at a timeline spot is a lesson's study guide: label it "Study notes"
+  function isNotes(r) { return r.kind === "pdf" && !!r.marker_id; }
   R.kindLabel = function (r) {
+    if (isNotes(r)) return "Study notes";
     if (r.storage_path) return r.kind === "pdf" ? "PDF" : "Picture";
     var h = host(r.url);
     return (r.kind === "pdf" ? "PDF link" : r.kind === "image" ? "Picture link" : "Link") + (h ? " · " + h : "");
   };
-  R.openLabel = function (r) { return r.kind === "pdf" ? "Open the PDF" : r.kind === "image" && r.storage_path ? "Open full size" : r.kind === "image" ? "Open the picture" : "Open the link"; };
+  R.openLabel = function (r) { return isNotes(r) ? "Open the study notes" : r.kind === "pdf" ? "Open the PDF" : r.kind === "image" && r.storage_path ? "Open full size" : r.kind === "image" ? "Open the picture" : "Open the link"; };
   R.isMissingTable = function (err) {
     var m = String((err && (err.message || err.details || err.hint)) || "") + " " + String(err && err.code || "");
     return /PGRST205|42P01|schema cache|does not exist|relation .*resources/i.test(m);
@@ -256,7 +259,7 @@
     if (L.moreVis) L.moreVis();
   }
   function guideLabel(r) {
-    if (r.kind === "pdf") return "PDF";
+    if (r.kind === "pdf") return "";   // [study-notes-label] a PDF guide is just "Study notes" (no "· PDF" tag)
     if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
     return r.kind === "image" ? "picture" : "link";
   }
@@ -275,7 +278,7 @@
         var h = R.href(r);
         return '<a class="lxm-guide-a" data-rsf="' + esc(r.id) + '"' + (h ? ' href="' + esc(h) + '"' : "") + ' target="_blank" rel="noopener noreferrer">' +
           '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>Study notes</b>' +
-          '<small>' + esc(r.title) + " · " + esc(guideLabel(r)) + '</small></span><span aria-hidden="true">↗</span></a>';
+          '<small>' + esc(r.title) + (guideLabel(r) ? " · " + esc(guideLabel(r)) : "") + '</small></span><span aria-hidden="true">↗</span></a>';
       }).join("");
     });
   }
