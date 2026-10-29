@@ -439,7 +439,7 @@
   L.collapseWrap = function (html, textLen) {
     if (textLen < COLLAPSE_CHARS) return html;
     var id = "lxvc" + (++vcN);
-    return '<div class="lx-vc" id="' + id + '">' + html + '</div><button type="button" class="lx-vc-btn" aria-expanded="false" aria-controls="' + id + '">Show verses ▾</button>';
+    return '<div class="lx-vc" id="' + id + '">' + html + '</div><button type="button" class="lx-vc-btn" aria-expanded="false" aria-controls="' + id + '">▼ Show verses</button>';
   };
   (function () {
     if (typeof document === "undefined") return;
@@ -453,7 +453,7 @@
       var b = e.target && e.target.closest ? e.target.closest(".lx-vc-btn") : null; if (!b) return;
       var box = document.getElementById(b.getAttribute("aria-controls")); if (!box) return;
       var open = !box.classList.contains("open"); box.classList.toggle("open", open);
-      b.setAttribute("aria-expanded", open ? "true" : "false"); b.textContent = open ? "Hide verses ▴" : "Show verses ▾";
+      b.setAttribute("aria-expanded", open ? "true" : "false"); b.textContent = open ? "▲ Hide verses" : "▼ Show verses";
       if (!open && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: "start" });
     });
   })();
