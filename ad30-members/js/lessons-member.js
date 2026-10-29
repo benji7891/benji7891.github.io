@@ -82,7 +82,7 @@
       var multi = r.verses.length > 1, q = r.verses.map(function (x, i) {
         return (multi ? '<sup class="lx-vn">' + (x.v === 1 && i ? x.c + ":" : "") + x.v + "</sup>" : "") + esc(x.t);
       }).join(" ");
-      h += '<blockquote class="' + (notes ? "lxn-v" : "sx-v lxm-v") + ' serif"><p>“' + q + "”</p><cite>" + esc(r.label) + " (KJV)</cite></blockquote>";
+      h += L.collapseWrap('<blockquote class="' + (notes ? "lxn-v" : "sx-v lxm-v") + ' serif"><cite>' + esc(r.label) + " (KJV)</cite><p>“" + q + "”</p></blockquote>", L.verseLen(r));
     });
     return h;
   }

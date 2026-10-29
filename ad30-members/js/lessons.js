@@ -433,12 +433,37 @@
       unverified: "this verse’s wording couldn’t be double-checked in our KJV sources", offline: "the KJV text couldn’t be loaded just now" })[r.why] || "it couldn’t be checked";
   };
   // HTML for one resolved reference. Verse text is KJV from kjv/*.json (escaped anyway).
+  /* [verse-collapse] long Scripture blocks start folded (first ~2 lines, faded) with a Show/Hide verses button.
+     Short passages (under COLLAPSE_CHARS characters of verse text) stay fully open. Wording is never changed. */
+  var COLLAPSE_CHARS = 250, vcN = 0;
+  L.collapseWrap = function (html, textLen) {
+    if (textLen < COLLAPSE_CHARS) return html;
+    var id = "lxvc" + (++vcN);
+    return '<div class="lx-vc" id="' + id + '">' + html + '</div><button type="button" class="lx-vc-btn" aria-expanded="false" aria-controls="' + id + '">Show verses ▾</button>';
+  };
+  (function () {
+    if (typeof document === "undefined") return;
+    var st = document.createElement("style");
+    st.textContent = ".lx-vc{position:relative;max-height:3.6em;overflow:hidden}.lx-vc .sx-v,.lx-vc .lxn-v{margin-top:16px}.lxm-verses .lx-vc{max-height:112px}.lx-vc cite{margin:0 0 4px!important}" +
+      ".lx-vc::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1.8em;background:linear-gradient(rgba(255,255,255,0),var(--lx-vc-bg,var(--panel,#fff)));pointer-events:none}" +
+      ".lx-vc.open{max-height:none}.lx-vc.open::after{display:none}@media print{.lx-vc{max-height:none}.lx-vc::after,.lx-vc-btn{display:none}}" +
+      ".lx-vc-btn{display:inline-block;margin:.35em 0 .6em;padding:.55em 1em;min-height:44px;font:inherit;font-weight:600;font-size:.95em;border:1px solid currentColor;border-radius:999px;background:transparent;color:inherit;cursor:pointer}";
+    (document.head || document.documentElement).appendChild(st);
+    document.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".lx-vc-btn") : null; if (!b) return;
+      var box = document.getElementById(b.getAttribute("aria-controls")); if (!box) return;
+      var open = !box.classList.contains("open"); box.classList.toggle("open", open);
+      b.setAttribute("aria-expanded", open ? "true" : "false"); b.textContent = open ? "Hide verses ▴" : "Show verses ▾";
+      if (!open && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: "start" });
+    });
+  })();
+  L.verseLen = function (r) { return r && r.ok ? r.verses.reduce(function (n, x) { return n + String(x.t || "").length; }, 0) : 0; };
   L.verseHTML = function (r) {
     if (!r.ok) return '<div class="ln lx-refonly"><span class="ref">' + esc(r.label || r.raw) + "</span></div>";
     var multi = r.verses.length > 1, q = r.verses.map(function (x, i) {
       return (multi ? '<sup class="lx-vn">' + (x.v === 1 && i ? x.c + ":" : "") + x.v + "</sup>" : "") + esc(x.t);
     }).join(" ");
-    return '<div class="ln lT" data-t="T"><span class="tag kT">TEXT</span><span class="ref">' + esc(r.label) + '</span> <span class="q">“' + q + "”</span></div>";
+    return L.collapseWrap('<div class="ln lT" data-t="T"><span class="tag kT">TEXT</span><span class="ref">' + esc(r.label) + '</span> <span class="q">“' + q + "”</span></div>", L.verseLen(r));
   };
 
   /* ===================== summary text (plain text -> safe paragraphs) ===================== */
