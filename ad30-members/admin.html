@@ -202,6 +202,15 @@
     <p class="hint" id="updated"></p>
     <div class="cards" id="stats"></div>
 
+    <h2 class="serif">Invite testers</h2>
+    <p class="hint">Only emails on this list (or people arriving with a ministry link) can sign in. Paste one or more emails, then tap Add — each one is emailed a sign-in link automatically. The site can send about 30 emails an hour.</p>
+    <form class="row" id="inviteForm">
+      <textarea class="field" id="inviteEmails" rows="2" placeholder="friend@example.com, another@example.com" style="padding:12px 14px"></textarea>
+      <button class="btn" type="submit">Add &amp; send link</button>
+    </form>
+    <p class="msg" id="inviteMsg" role="status"></p>
+    <div class="tbl" id="tInvites"></div>
+
     <h2 class="serif">Testers</h2>
     <p class="hint">Everyone invited or signed in, most recent visit first. A “visit” is a page load at least 30 minutes after the last one. “How far” = average of the furthest point reached in each video they started. Times are in your device’s time zone.</p>
     <p class="hint"><button class="xbtn" data-csv="people" type="button">Download CSV</button></p>
@@ -236,15 +245,6 @@
     <h2 class="serif">Who watched what</h2>
     <p class="hint">Furthest point each person reached in each video. <button class="xbtn" data-csv="watch" type="button">Download CSV</button></p>
     <div class="tbl" id="tWatch"></div>
-
-    <h2 class="serif">Invite testers</h2>
-    <p class="hint">Only emails on this list (or people arriving with a ministry link) can sign in. Paste one or more emails, then tap Add — each one is emailed a sign-in link automatically. The site can send about 30 emails an hour.</p>
-    <form class="row" id="inviteForm">
-      <textarea class="field" id="inviteEmails" rows="2" placeholder="friend@example.com, another@example.com" style="padding:12px 14px"></textarea>
-      <button class="btn" type="submit">Add &amp; send link</button>
-    </form>
-    <p class="msg" id="inviteMsg" role="status"></p>
-    <div class="tbl" id="tInvites"></div>
 
     <h2 class="serif">Free access window</h2>
     <p class="hint" id="accessHint">Each new member gets 30 free days (access until = sign-up + 30 days). This is only enforced after the paywall is switched on (SETUP.md, “Paywall later”). Give someone more time:</p>
