@@ -265,6 +265,62 @@
   </div>
 </div>
 
+<style>/* [admin-collapse] every big admin section folds; all start closed */
+.gc-tog{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:22px 0 6px;padding:10px 14px;border:1px solid #2c323d;border-radius:12px;background:#1d222b;color:inherit;font:inherit;font-size:20px;font-weight:600;text-align:left;cursor:pointer}
+.gc-tog:focus-visible{outline:2px solid #9fd8a5;outline-offset:2px}
+.gc-tog .gc-arr{display:inline-block;width:1em;font-size:16px;transition:transform .15s}
+.gc-tog[aria-expanded="true"] .gc-arr{transform:rotate(90deg)}
+.lx-admin > .gc-tog{margin:0}
+.gc-sec > h2.gc-h, .gc-body > h2.gc-h{display:none}
+</style>
+<script>/* [admin-collapse] wraps sections in place (ids unchanged); opens a section when something inside it is focused or scrolled to */
+(function () {
+  var body = document.getElementById("adminBody"); if (!body) return;
+  var n = 0;
+  function make(label, h, nodes, host, before) {
+    var id = "gcBody" + (++n);
+    var b = document.createElement("button"); b.type = "button"; b.className = "gc-tog";
+    b.setAttribute("aria-expanded", "false"); b.setAttribute("aria-controls", id);
+    var a = document.createElement("span"); a.className = "gc-arr"; a.setAttribute("aria-hidden", "true"); a.textContent = "▶";
+    var t = document.createElement("span"); t.className = "gc-lbl"; t.textContent = label;
+    b.appendChild(a); b.appendChild(t);
+    var d = document.createElement("div"); d.className = "gc-body"; d.id = id; d.hidden = true;
+    host.insertBefore(b, before); host.insertBefore(d, before);
+    nodes.forEach(function (x) { d.appendChild(x); });
+    if (h) { h.classList.add("gc-h"); new MutationObserver(function () { t.textContent = h.textContent; }).observe(h, { childList: true, characterData: true, subtree: true }); }
+    b.addEventListener("click", function () { set(b, d.hidden); });
+  }
+  function set(b, open) { var d = document.getElementById(b.getAttribute("aria-controls")); d.hidden = !open; b.setAttribute("aria-expanded", open ? "true" : "false"); }
+  // the four form sections (they stay hidden until the scripts unhide them)
+  ["cbAdmin", "lxAdmin", "rsAdmin", "teAdmin"].forEach(function (sid) {
+    var s = document.getElementById(sid); if (!s) return;
+    var h = s.querySelector("h2");
+    make(h ? h.textContent : sid, h, Array.prototype.slice.call(s.childNodes), s, null);
+  });
+  // stats (no heading of its own)
+  var up = document.getElementById("updated"), st = document.getElementById("stats");
+  if (st) make("Stats", null, up ? [up, st] : [st], st.parentNode, up || st);
+  // each plain h2 and everything after it up to the next h2
+  Array.prototype.slice.call(body.children).forEach(function (h) {
+    if (h.tagName !== "H2") return;
+    var nodes = [h], x = h.nextSibling;
+    while (x && !(x.nodeType === 1 && x.tagName === "H2")) { nodes.push(x); x = x.nextSibling; }
+    make(h.textContent, h, nodes, body, h);
+  });
+  function openFor(el) {
+    for (var d = el; d && d !== document; d = d.parentNode) {
+      if (d.classList && d.classList.contains("gc-body") && d.hidden) { var b = d.previousElementSibling; if (b && b.classList.contains("gc-tog")) set(b, true); }
+    }
+  }
+  body.addEventListener("focusin", function (e) { openFor(e.target); });
+  var siv = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function () { try { openFor(this); } catch (e) {} return siv.apply(this, arguments); };
+  var fo = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function () { try { openFor(this); } catch (e) {} return fo.apply(this, arguments); };
+  // lesson / resource "Edit" swaps the heading to "Edit …" — open that section
+  ["lxH", "rsH", "cbH"].forEach(function (i) { var h = document.getElementById(i); if (h) new MutationObserver(function () { if (/^Edit/.test(h.textContent)) openFor(h); }).observe(h, { childList: true, characterData: true, subtree: true }); });
+})();
+</script>
 <script src="js/config.js"></script>
 <script src="js/kjv-verses.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
