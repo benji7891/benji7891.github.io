@@ -14,7 +14,7 @@
     for (var i = 0; i < DATA.length; i++) if ((DATA[i].timelineIds || []).indexOf(m.id) >= 0) return DATA[i].id;
     if (L.MEMBER_MAP && L.MEMBER_MAP[m.id]) return L.MEMBER_MAP[m.id];
     var EX = { herod: "birth", pilate: "jordan", john30: "jordan", jn1: "jordan", pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",
-      pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles", jn1155: "passover", jn121: "passover", entry: "passover", n10: "passover", jn2026: "resurrection" };
+      pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles", jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", jn2026: "resurrection" };
     if (EX[m.id]) return EX[m.id];
     for (i = 0; i < GROUPS.length; i++) if (String(m.sec).indexOf(GROUPS[i][0]) === 0) return GROUPS[i][1];
     return null;

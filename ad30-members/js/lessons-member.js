@@ -28,7 +28,7 @@
     pilate: "jordan", john30: "jordan", jn1: "jordan",                      // Two men turn thirty · AD 26
     pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",    // First Passover ... (early ministry, after the Jordan)
     pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles",   // The final twelve months begin · AD 29
-    jn1155: "passover", jn121: "passover", entry: "passover", n10: "passover",                // The final week, up to the cross
+    jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", // The final week, up to the cross
     jn2026: "resurrection"                                                  // Thomas, "after eight days": an appearance of the risen Lord (John 20)
   };
   //  3. a marker added to the timeline later: by its timeline group heading
@@ -131,6 +131,13 @@
      says "No lesson yet" in light text, so the whole timeline is visible. */
   function spotsFor(secId) { return (L.MARKERS || []).filter(function (m) { return L.sectionFor(m.id) === secId; }); }
   L.spotsFor = spotsFor;
+  // [nov7-slots] jn12b and heartbeat are real spots, but members do not see them until a lesson
+  // is stored on them. Publishing this file before those database rows adds no empty spot.
+  var QUIET_UNTIL_LESSON = { jn12b: 1, heartbeat: 1 };
+  function spotVisible(m, rows) {
+    if (!QUIET_UNTIL_LESSON[m.id]) return true;
+    return rows.some(function (r) { return r.marker_id === m.id; });
+  }
   function sectionBox(secId) {
     var spots = spotsFor(secId), rows = lessonsFor(secId); if (!spots.length && !rows.length) return null;
     var box = document.createElement("div"); box.className = "lxm lxm-spots"; box.setAttribute("data-sec", secId);
@@ -138,6 +145,7 @@
     // [edit-tabs] leader edits: renamed / redated / hidden / reordered spots, hidden headings, no lesson KJV box
     var so = null; sections().forEach(function (x) { if (x.id === secId) so = x; });
     if (window.AD30SO && so) spots = window.AD30SO.spots(so, spots);
+    spots = spots.filter(function (m) { return spotVisible(m, rows); });
     var hideTH = !!(so && so.show && so.show.timelineHeading === false), nv = !!(so && so.hideLessonScripture);
     if (!hideTH) box.innerHTML = '<h3 class="lxm-h2">On the timeline <small>' + spots.length + (spots.length === 1 ? " spot" : " spots") +
       (n ? " · " + n + (n === 1 ? " lesson" : " lessons") : "") + "</small></h3>";
