@@ -1,15 +1,27 @@
--- Nov 7, 2026 — GodsTimeclock member additions
--- PREVIEW SQL. Do not apply until the owner approves the placement.
+-- Nov 7, 2026 — GodsTimeclock member additions. Owner approved 17:09 Manila.
 --
--- Running this file as written starts a transaction, inserts only rows that
--- are not already there, then ROLLS BACK. Nothing is kept. To apply later,
--- replace the final ROLLBACK with COMMIT. There is no UPDATE and no DELETE.
--- This file does not send email and does not change YouTube.
+-- RUN THIS IN ONE PROJECT ONLY:
+--   Supabase project ref wwmdvausfdqxcaaunnhu
+--   Dashboard: https://supabase.com/dashboard/project/wwmdvausfdqxcaaunnhu
+--   Org/project name on that dashboard: ad30-members / AD30 Study
+--
+-- DO NOT RUN against wtdagmcnnotbjvekynqa or hsnwopektgtudzifmhur.
+-- Those are different projects. This script cannot see which project the
+-- SQL editor is connected to (every Supabase database is named postgres).
+-- Check the dashboard URL before pressing Run.
+--
+-- What it does: inserts four lessons and seven Drive links if those YouTube
+-- ids and Drive file ids are not already stored. It does not update existing
+-- rows, does not delete, does not send email, and does not change YouTube.
+-- A second run inserts nothing.
+--
+-- Publish order: merge the site change first (it does not show these spots
+-- until the rows exist), then run this script, then reload the member page.
 --
 -- Placement (proposed):
 --   Red Letter 12.3, 12.4, 12.5 -> marker jn12b (new undated spot after entry / 12.2)
 --   The Heartbeat of the King   -> marker heartbeat (new undated spot after jn12b, before n10)
--- Members only see those spots after ad30-members/js/lessons.js is published.
+-- Members see those spots only after both the site change is published AND these rows exist.
 -- The teacher timeline HTML lives in public.teacher_content and is NOT changed here.
 -- On the teacher page, a lesson whose marker is missing from that HTML shows
 -- under Latest lessons until that HTML is updated in a separate approved step.
@@ -94,5 +106,10 @@ where not exists (
   where coalesce(r.url, '') ilike '%' || v.drive_id || '%'
 );
 
--- Safety latch. Replace this line with COMMIT only after review.
-rollback;
+-- What this session will keep. Expect four lesson rows.
+select youtube_id, title, marker_id, published
+from public.lessons
+where youtube_id in ('W0Jiusiejwg', 'nRCD4of7ewg', 'ifNlS1u3Ldw', 'Wq00ueSP9qY')
+order by marker_id, sort_order;
+
+commit;

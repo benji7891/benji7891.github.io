@@ -131,6 +131,13 @@
      says "No lesson yet" in light text, so the whole timeline is visible. */
   function spotsFor(secId) { return (L.MARKERS || []).filter(function (m) { return L.sectionFor(m.id) === secId; }); }
   L.spotsFor = spotsFor;
+  // [nov7-slots] jn12b and heartbeat are real spots, but members do not see them until a lesson
+  // is stored on them. Publishing this file before those database rows adds no empty spot.
+  var QUIET_UNTIL_LESSON = { jn12b: 1, heartbeat: 1 };
+  function spotVisible(m, rows) {
+    if (!QUIET_UNTIL_LESSON[m.id]) return true;
+    return rows.some(function (r) { return r.marker_id === m.id; });
+  }
   function sectionBox(secId) {
     var spots = spotsFor(secId), rows = lessonsFor(secId); if (!spots.length && !rows.length) return null;
     var box = document.createElement("div"); box.className = "lxm lxm-spots"; box.setAttribute("data-sec", secId);
@@ -138,6 +145,7 @@
     // [edit-tabs] leader edits: renamed / redated / hidden / reordered spots, hidden headings, no lesson KJV box
     var so = null; sections().forEach(function (x) { if (x.id === secId) so = x; });
     if (window.AD30SO && so) spots = window.AD30SO.spots(so, spots);
+    spots = spots.filter(function (m) { return spotVisible(m, rows); });
     var hideTH = !!(so && so.show && so.show.timelineHeading === false), nv = !!(so && so.hideLessonScripture);
     if (!hideTH) box.innerHTML = '<h3 class="lxm-h2">On the timeline <small>' + spots.length + (spots.length === 1 ? " spot" : " spots") +
       (n ? " · " + n + (n === 1 ? " lesson" : " lessons") : "") + "</small></h3>";
