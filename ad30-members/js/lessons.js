@@ -149,6 +149,24 @@
   "dt": "Fri 31 Mar AD 30",
   "ttl": "The entry: “the lamb fetched before the tenth opens”"
   },
+  /* [nov7-slots] Proposed undated spots for owner review (not a calendar day).
+     jn12b: Red Letter 12.3–12.5 after 12.2, in lesson order.
+     heartbeat: standalone lesson after John 12 and before John 13.
+     Both sit before n10 only so they follow 12.2; that is not a claim they
+     fall before 10 Nisan. Move these two objects to just before jn131 if
+     they should sit after the 10 Nisan spot instead. */
+  {
+  "id": "jn12b",
+  "sec": "The final week",
+  "dt": "After lesson 12.2 · no day fixed",
+  "ttl": "John 12, after the entry"
+  },
+  {
+  "id": "heartbeat",
+  "sec": "The final week",
+  "dt": "After John 12 and before John 13 · no day fixed",
+  "ttl": "The Heartbeat of the King"
+  },
   {
   "id": "n10",
   "sec": "The final week",

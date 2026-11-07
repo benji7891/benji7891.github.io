@@ -28,7 +28,7 @@
     pilate: "jordan", john30: "jordan", jn1: "jordan",                      // Two men turn thirty · AD 26
     pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",    // First Passover ... (early ministry, after the Jordan)
     pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles",   // The final twelve months begin · AD 29
-    jn1155: "passover", jn121: "passover", entry: "passover", n10: "passover",                // The final week, up to the cross
+    jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", // The final week, up to the cross
     jn2026: "resurrection"                                                  // Thomas, "after eight days": an appearance of the risen Lord (John 20)
   };
   //  3. a marker added to the timeline later: by its timeline group heading

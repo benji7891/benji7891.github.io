@@ -90,6 +90,9 @@
 .lxm-guide-t{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
 .lxm-guide-t b{font-size:20px; font-weight:600}
 .lxm-guide-t small{font-size:13px; color:#3b3020; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* [nov7-slots] several guides under one video: the bold line is the distinct name and may wrap on a phone */
+.lxm-guide-multi .lxm-guide-t b{white-space:normal; line-height:1.25; overflow-wrap:break-word}
+.lxm-guide-multi .lxm-guide-a{height:auto}
 .lxm-guide-a:focus-visible{outline:3px solid var(--text,#ece8df)}
 /* [layout-v2] the section's own notes button: outlined, so it isn't mistaken for a lesson's Study notes */
 .sx-item .sx-notes{background:transparent; color:var(--gold,#d9b870); font-size:17px; font-weight:500; min-height:52px}

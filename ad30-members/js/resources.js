@@ -263,6 +263,14 @@
     if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
     return r.kind === "image" ? "picture" : "link";
   }
+  // [nov7-slots] One guide keeps the bold label "Study notes". Several guides on one lesson
+  // (The Heartbeat of the King has four) use the title's own ending, so each button is distinct.
+  function guideButtonLabel(title, lessonTitle) {
+    var t = String(title || "").trim(), lesson = String(lessonTitle || "").trim(), rest = t;
+    if (lesson && t.toLowerCase().indexOf(lesson.toLowerCase()) === 0) rest = t.slice(lesson.length).replace(/^[\s:\-–—|·]+/, "").trim();
+    return rest || t || "Study notes";
+  }
+  R._guideButton = guideButtonLabel;
   // [notes-match-fix] the featured lesson's looser match is now part of assign() above
   function fillGuides(scope) {
     if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) return;
@@ -273,12 +281,18 @@
       var k = row ? lkey(row) : lkey({ marker_id: box.getAttribute("data-lxg-m"), title: box.getAttribute("data-lxg-t"), created_at: box.getAttribute("data-lxg-c") });
       var hits = A.of[k] || [];
       box._rsDone = true; box.hidden = !hits.length;   // [notes-match-fix] re-filled every time, so a file never sits under two lessons
+      box.classList.toggle("lxm-guide-multi", hits.length > 1);
       if (!hits.length) { box.innerHTML = ""; return; }
+      var multi = hits.length > 1, lessonTitle = box.getAttribute("data-lxg-t") || "";
       box.innerHTML = hits.map(function (r) {
-        var h = R.href(r);
+        var h = R.href(r), extra = guideLabel(r);
+        var label = multi ? guideButtonLabel(r.title, lessonTitle) : "Study notes";
+        var small = multi
+          ? (extra ? "<small>" + esc(extra) + "</small>" : "")
+          : "<small>" + esc(r.title) + (extra ? " · " + esc(extra) : "") + "</small>";
         return '<a class="lxm-guide-a" data-rsf="' + esc(r.id) + '"' + (h ? ' href="' + esc(h) + '"' : "") + ' target="_blank" rel="noopener noreferrer">' +
-          '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>Study notes</b>' +
-          '<small>' + esc(r.title) + (guideLabel(r) ? " · " + esc(guideLabel(r)) : "") + '</small></span><span aria-hidden="true">↗</span></a>';
+          '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>' + esc(label) + "</b>" +
+          small + '</span><span aria-hidden="true">↗</span></a>';
       }).join("");
     });
   }

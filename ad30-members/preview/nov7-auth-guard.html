@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<title>Preview check: production demo flag stays off</title>
+</head>
+<body>
+<p>This check loads the real config and the real sign-in code. It does not call sign-in and it does not load the Supabase client.</p>
+<pre id="out">waiting</pre>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+document.getElementById("out").textContent = JSON.stringify({
+  configured: !!(window.AD30 && window.AD30.configured),
+  demo: !!(window.AD30 && window.AD30.demo),
+  hasClient: !!(window.AD30 && window.AD30.sb),
+  search: location.search
+});
+</script>
+</body>
+</html>

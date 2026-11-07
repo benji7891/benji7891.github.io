@@ -1,0 +1,917 @@
+diff --git a/ad30-members/admin.html b/ad30-members/admin.html
+index d8d4f6b..fd8cd6d 100644
+--- a/ad30-members/admin.html
++++ b/ad30-members/admin.html
+@@ -325,17 +325,17 @@
+ <script src="js/kjv-verses.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+ <script src="js/common.js"></script>
+-<script src="js/lessons.js"></script>
++<script src="js/lessons.js?v=20261107a"></script>
+ <script src="js/timeline-dates.js"></script><!-- [timeline-dates] -->
+ <script src="js/lessons-admin.js"></script>
+-<script src="js/resources.js"></script>
++<script src="js/resources.js?v=20261107a"></script>
+ <script src="js/resources-admin.js"></script>
+ <script src="js/combined-admin.js"></script>
+ <script src="js/notes-edit.js"></script><!-- [pdf-edit-fix] -->
+ <script src="js/timeline-placer.js"></script><!-- [timeline-v3] drag-and-drop / Move to… onto a timeline spot -->
+ <script src="js/simple-data.js"></script><!-- [edit-tabs] built-in tab text -->
+ <script src="js/section-overrides.js"></script><!-- [edit-tabs] -->
+-<script src="js/tab-editor.js"></script><!-- [edit-tabs] -->
++<script src="js/tab-editor.js?v=20261107a"></script><!-- [edit-tabs] -->
+ <script src="js/admin.js"></script>
+ <!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->
+ <script src="js/chat.js"></script>
+diff --git a/ad30-members/css/lessons-member.css b/ad30-members/css/lessons-member.css
+index bd78fc2..8d1cd75 100644
+--- a/ad30-members/css/lessons-member.css
++++ b/ad30-members/css/lessons-member.css
+@@ -90,6 +90,9 @@
+ .lxm-guide-t{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
+ .lxm-guide-t b{font-size:20px; font-weight:600}
+ .lxm-guide-t small{font-size:13px; color:#3b3020; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
++/* [nov7-slots] several guides under one video: the bold line is the distinct name and may wrap on a phone */
++.lxm-guide-multi .lxm-guide-t b{white-space:normal; line-height:1.25; overflow-wrap:break-word}
++.lxm-guide-multi .lxm-guide-a{height:auto}
+ .lxm-guide-a:focus-visible{outline:3px solid var(--text,#ece8df)}
+ /* [layout-v2] the section's own notes button: outlined, so it isn't mistaken for a lesson's Study notes */
+ .sx-item .sx-notes{background:transparent; color:var(--gold,#d9b870); font-size:17px; font-weight:500; min-height:52px}
+diff --git a/ad30-members/index.html b/ad30-members/index.html
+index 4e8de73..62fa687 100644
+--- a/ad30-members/index.html
++++ b/ad30-members/index.html
+@@ -202,9 +202,9 @@ footer .n{font-family:var(--sans);font-size:12.5px;color:#777;margin-top:6px}
+ <script src="js/kjv-verses.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+ <script src="js/common.js"></script>
+-<script src="js/lessons.js?v=20261029c"></script>
++<script src="js/lessons.js?v=20261107a"></script>
+ <script src="js/timeline-dates.js"></script><!-- [timeline-dates] -->
+-<script src="js/resources.js"></script>
++<script src="js/resources.js?v=20261107a"></script>
+ <script src="js/timeline.js"></script>
+ </body>
+ </html>
+diff --git a/ad30-members/js/lessons-member.js b/ad30-members/js/lessons-member.js
+index 40c26b7..4fa7b20 100644
+--- a/ad30-members/js/lessons-member.js
++++ b/ad30-members/js/lessons-member.js
+@@ -28,7 +28,7 @@
+     pilate: "jordan", john30: "jordan", jn1: "jordan",                      // Two men turn thirty · AD 26
+     pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",    // First Passover ... (early ministry, after the Jordan)
+     pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles",   // The final twelve months begin · AD 29
+-    jn1155: "passover", jn121: "passover", entry: "passover", n10: "passover",                // The final week, up to the cross
++    jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", // The final week, up to the cross
+     jn2026: "resurrection"                                                  // Thomas, "after eight days": an appearance of the risen Lord (John 20)
+   };
+   //  3. a marker added to the timeline later: by its timeline group heading
+diff --git a/ad30-members/js/lessons.js b/ad30-members/js/lessons.js
+index 927337e..2c0a1f9 100644
+--- a/ad30-members/js/lessons.js
++++ b/ad30-members/js/lessons.js
+@@ -149,6 +149,24 @@
+   "dt": "Fri 31 Mar AD 30",
+   "ttl": "The entry: “the lamb fetched before the tenth opens”"
+   },
++  /* [nov7-slots] Proposed undated spots for owner review (not a calendar day).
++     jn12b: Red Letter 12.3–12.5 after 12.2, in lesson order.
++     heartbeat: standalone lesson after John 12 and before John 13.
++     Both sit before n10 only so they follow 12.2; that is not a claim they
++     fall before 10 Nisan. Move these two objects to just before jn131 if
++     they should sit after the 10 Nisan spot instead. */
++  {
++  "id": "jn12b",
++  "sec": "The final week",
++  "dt": "After lesson 12.2 · no day fixed",
++  "ttl": "John 12, after the entry"
++  },
++  {
++  "id": "heartbeat",
++  "sec": "The final week",
++  "dt": "After John 12 and before John 13 · no day fixed",
++  "ttl": "The Heartbeat of the King"
++  },
+   {
+   "id": "n10",
+   "sec": "The final week",
+diff --git a/ad30-members/js/resources.js b/ad30-members/js/resources.js
+index 314c21f..e1664e7 100644
+--- a/ad30-members/js/resources.js
++++ b/ad30-members/js/resources.js
+@@ -263,6 +263,14 @@
+     if (/^https:\/\/drive\.google\.com\/file\/d\//.test(r.url || "")) return "opens in Google Drive";
+     return r.kind === "image" ? "picture" : "link";
+   }
++  // [nov7-slots] One guide keeps the bold label "Study notes". Several guides on one lesson
++  // (The Heartbeat of the King has four) use the title's own ending, so each button is distinct.
++  function guideButtonLabel(title, lessonTitle) {
++    var t = String(title || "").trim(), lesson = String(lessonTitle || "").trim(), rest = t;
++    if (lesson && t.toLowerCase().indexOf(lesson.toLowerCase()) === 0) rest = t.slice(lesson.length).replace(/^[\s:\-–—|·]+/, "").trim();
++    return rest || t || "Study notes";
++  }
++  R._guideButton = guideButtonLabel;
+   // [notes-match-fix] the featured lesson's looser match is now part of assign() above
+   function fillGuides(scope) {
+     if (!ROWS || !(L && L.lessonsLoaded && L.lessonsLoaded())) return;
+@@ -273,12 +281,18 @@
+       var k = row ? lkey(row) : lkey({ marker_id: box.getAttribute("data-lxg-m"), title: box.getAttribute("data-lxg-t"), created_at: box.getAttribute("data-lxg-c") });
+       var hits = A.of[k] || [];
+       box._rsDone = true; box.hidden = !hits.length;   // [notes-match-fix] re-filled every time, so a file never sits under two lessons
++      box.classList.toggle("lxm-guide-multi", hits.length > 1);
+       if (!hits.length) { box.innerHTML = ""; return; }
++      var multi = hits.length > 1, lessonTitle = box.getAttribute("data-lxg-t") || "";
+       box.innerHTML = hits.map(function (r) {
+-        var h = R.href(r);
++        var h = R.href(r), extra = guideLabel(r);
++        var label = multi ? guideButtonLabel(r.title, lessonTitle) : "Study notes";
++        var small = multi
++          ? (extra ? "<small>" + esc(extra) + "</small>" : "")
++          : "<small>" + esc(r.title) + (extra ? " · " + esc(extra) : "") + "</small>";
+         return '<a class="lxm-guide-a" data-rsf="' + esc(r.id) + '"' + (h ? ' href="' + esc(h) + '"' : "") + ' target="_blank" rel="noopener noreferrer">' +
+-          '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>Study notes</b>' +
+-          '<small>' + esc(r.title) + (guideLabel(r) ? " · " + esc(guideLabel(r)) : "") + '</small></span><span aria-hidden="true">↗</span></a>';
++          '<span class="lxm-guide-ic" aria-hidden="true">📄</span><span class="lxm-guide-t"><b>' + esc(label) + "</b>" +
++          small + '</span><span aria-hidden="true">↗</span></a>';
+       }).join("");
+     });
+   }
+diff --git a/ad30-members/js/tab-editor.js b/ad30-members/js/tab-editor.js
+index ffa59ec..469c635 100644
+--- a/ad30-members/js/tab-editor.js
++++ b/ad30-members/js/tab-editor.js
+@@ -14,7 +14,7 @@
+     for (var i = 0; i < DATA.length; i++) if ((DATA[i].timelineIds || []).indexOf(m.id) >= 0) return DATA[i].id;
+     if (L.MEMBER_MAP && L.MEMBER_MAP[m.id]) return L.MEMBER_MAP[m.id];
+     var EX = { herod: "birth", pilate: "jordan", john30: "jordan", jn1: "jordan", pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",
+-      pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles", jn1155: "passover", jn121: "passover", entry: "passover", n10: "passover", jn2026: "resurrection" };
++      pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles", jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", jn2026: "resurrection" };
+     if (EX[m.id]) return EX[m.id];
+     for (i = 0; i < GROUPS.length; i++) if (String(m.sec).indexOf(GROUPS[i][0]) === 0) return GROUPS[i][1];
+     return null;
+diff --git a/ad30-members/preview/NOV7-DEPLOYMENT-PLAN.md b/ad30-members/preview/NOV7-DEPLOYMENT-PLAN.md
+new file mode 100644
+index 0000000..d7e71e9
+--- /dev/null
++++ b/ad30-members/preview/NOV7-DEPLOYMENT-PLAN.md
+@@ -0,0 +1,92 @@
++# Nov 7 member additions — preview for review
++
++Nothing in this folder has been applied to the live site. No branch was pushed, no pull request was opened, no SQL was run, and YouTube was not changed.
++
++## What members would see
++
++Open **Passover · The Cross**. After the existing entry spot (Red Letter 12.2) two new undated spots appear:
++
++1. **John 12, after the entry** — date line `After lesson 12.2 · no day fixed`
++   - Red Letter 12.3: The Hour Is Come (`W0Jiusiejwg`) with one **Study notes** button
++   - Red Letter 12.4: He Hath Blinded Their Eyes (`nRCD4of7ewg`) with one **Study notes** button
++   - Red Letter 12.5: The Last Day (`ifNlS1u3Ldw`) with one **Study notes** button
++2. **The Heartbeat of the King** — date line `After John 12 and before John 13 · no day fixed`
++   - The Heartbeat of the King: From Adam to the Throne (`Wq00ueSP9qY`)
++   - Four buttons under the video, in this order: **Study Notes**, **Six Week Study Series**, **Six Week Deeper Teaching**, **Companion Handout**. Each says “opens in Google Drive”.
++
++The single-guide label stays **Study notes**. That is the label the member page already uses for a lesson’s study guide. Heartbeat is the only lesson with more than one guide, so only Heartbeat uses the four distinct names.
++
++Spot order inside the section:
++
++`jn121` (12.1) → `entry` (12.2) → `jn12b` (12.3–12.5) → `heartbeat` → `n10` (10 Nisan, unchanged) → `jn131` (John 13, unchanged)
++
++## Flag for the owner — new timeline slots
++
++A new slot is required for Heartbeat. No existing spot means “between John 12 and John 13” without a calendar day. `n10` is Saturday 1 Apr AD 30. `jn131` is the last supper. Putting Heartbeat on either of those would assign a day.
++
++12.3–12.5 also need a place that does not invent a day. Sharing `entry` with 12.2 would list them under **Fri 31 Mar AD 30**.
++
++The proposal adds two undated spots in `ad30-members/js/lessons.js`, both in **The final week**, both mapped to the Passover section:
++
++| Marker id | Shown as | Holds |
++|---|---|---|
++| `jn12b` | John 12, after the entry | 12.3, 12.4, 12.5 |
++| `heartbeat` | The Heartbeat of the King | the standalone lesson |
++
++They are inserted **before** the existing 10 Nisan spot so 12.3 follows 12.2. That position is lesson order, not a claim that these lessons fall before 10 Nisan. If they should sit after 10 Nisan and immediately before John 13, move the two marker objects in `lessons.js` to just before `jn131`. The video ids and the SQL marker ids would stay the same only if the ids stay `jn12b` and `heartbeat`.
++
++These spots are not in the teacher timeline. That timeline is HTML stored in `public.teacher_content`, loaded after a leader signs in. This preview does not change that table. Until it is updated in a later approved step, the teacher page will list these four lessons under Latest lessons instead of on a marker. The member page uses the marker list in `lessons.js` and will show the spots.
++
++## How the page stores this
++
++Lessons are rows in `public.lessons`. Study guides are rows in `public.resources` (a Drive link, not a file uploaded into Supabase storage). The member page attaches a guide to a lesson when they share a timeline spot and the titles match. Heartbeat’s four titles start with the lesson title and end with the button name. `sort_order` 1–4 fixes the button order. There is no `lesson_id` column; the title match is the existing rule.
++
++The anon key cannot read `public.lessons` (the request returned permission denied). This preview could not query production for duplicates. The videos are not hardcoded in the repo. The SQL inserts a row only when that YouTube id, or that Drive file id, is not already stored, and it does not update or delete anything.
++
++## What changed in the site code
++
++- `js/lessons.js` — the two undated markers.
++- `js/lessons-member.js` and `js/tab-editor.js` — those markers belong to Passover. One guide on a lesson is unchanged.
++- `js/resources.js` — when one lesson has several guides, the bold label is the title ending. A lesson with one guide still says **Study notes**.
++- `css/lessons-member.css` — those several labels may wrap on a phone.
++- Cache query `?v=20261107a` on the changed scripts and the member lesson stylesheet, so phones do not keep the previous copy.
++
++Sign-in, admin checks, row-level security, and the sharing-lockdown work were not touched. `simple.html` still loads `js/config.js` and still shows the email gate. `?demo=1` does not open the member page while that config is connected. The check page confirmed `configured: true`, `demo: false`.
++
++## Preview fixture
++
++`preview/nov7-additions.html?demo=1#passover` is a copy of the member layout. It does **not** load `js/config.js` and does not create a database client. It uses the site’s existing demo flag, which only runs when the site is not connected. `preview/nov7-fixture.js` supplies the rows.
++
++Lessons 11.1–11.5, 12.1, and 12.2 in that preview are **stand-ins**: the public YouTube titles and the spots already confirmed (11.1–11.5 on `jn1155`, 12.1 on `jn121`, 12.2 on `entry`). Each stand-in summary says it is not part of the insert. Their dates and sort order are fixture values, not a copy of the database. They are not in the SQL.
++
++Do not publish the `preview/` folder on the live site. It is a review artifact. The approved release is the JavaScript, CSS, and cache-bust edits, plus the SQL after the rollback line is changed.
++
++## SQL — do not run yet
++
++`preview/nov7-additions.sql` begins a transaction, prints matching lesson and resource rows, inserts only missing rows, then **ROLLBACK**. Running the file as written keeps nothing. After approval, replace `rollback` with `commit`.
++
++The insert does not set `notified`, beyond storing `false`, and it does not call the mailer. If a database trigger sends mail on insert, disable that trigger before committing.
++
++If `video_source` or the `timeline_*` columns are not on the tables yet, remove those columns from the insert lists. `created_by` is left to the table default.
++
++## Checks already run
++
++`node ad30-members/preview/nov7-check.mjs` (local static server and headless Chrome only). This run installed `puppeteer-core` in `/tmp/nov7-test` and used `/usr/bin/google-chrome`. The checker does not sign in and does not open a database connection:
++
++- Production config with `?demo=1` stays signed out.
++- The live member page does not load the fixture.
++- Passover shows the four new videos once each, and the seven prior videos once each.
++- Exactly seven guide links, one per Drive file id.
++- 12.3, 12.4, and 12.5 each have one Study notes button under the video.
++- Heartbeat has four stacked buttons in the requested order, including on a 390px-wide screen, with no horizontal overflow.
++- No page errors.
++
++Screenshots: `preview/screenshots/` (desktop and mobile, John 12 block and Heartbeat).
++
++## After approval
++
++1. Confirm the spot position (before 10 Nisan, as proposed, or moved to just before `jn131`).
++2. Publish the JavaScript, CSS, and the `?v=20261107a` tags together with the SQL commit, so the new spots are not empty.
++3. Leave `preview/` off the live site.
++4. Leave `public.teacher_content` for a separate decision. Members do not need that update to see the lessons.
++5. Signed in as a member, open Passover and confirm the four videos, seven buttons, and that 11.1–12.2 are unchanged.
+diff --git a/ad30-members/preview/nov7-additions.html b/ad30-members/preview/nov7-additions.html
+new file mode 100644
+index 0000000..c137858
+--- /dev/null
++++ b/ad30-members/preview/nov7-additions.html
+@@ -0,0 +1,201 @@
++<!doctype html>
++<html lang="en">
++<head>
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
++<meta name="robots" content="noindex,nofollow">
++<meta name="referrer" content="strict-origin-when-cross-origin">
++<meta name="theme-color" content="#0e1116">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Thirtieth Year">
++<meta name="application-name" content="Thirtieth Year">
++<title>PREVIEW FIXTURE · Nov 7 member additions</title>
++<link rel="manifest" href="../manifest.webmanifest">
++<link rel="icon" type="image/png" sizes="192x192" href="../../ad30-simple/icon-192.png">
++<link rel="apple-touch-icon" sizes="180x180" href="../../ad30-simple/icon-180.png">
++<link rel="stylesheet" href="../css/members.css">
++<!-- [simple-rework] member view: accordion + study notes + print styles -->
++<link rel="stylesheet" href="../css/simple.css">
++<!-- [lessons-merge] video lessons -->
++<link rel="stylesheet" href="../css/lessons.css">
++<link rel="stylesheet" href="../css/lessons-member.css?v=20261107a">
++<link rel="stylesheet" href="../css/resources.css">
++<!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
++<link rel="stylesheet" href="../css/gtc-layout.css">
++<link rel="stylesheet" href="../css/prophetic-clock.css">
++<!-- [clock-toggle] Oct 20, 2026: God's Time Clock is back on the left of the member page, with a Show/Hide clock
++     button fixed in the top-left corner (css/clock-toggle.css + js/clock-toggle.js). Default: shown. The choice is
++     remembered on this device (localStorage "ad30.clockShown"). html.gtc-off = hidden -> one centred column like before. -->
++<link rel="stylesheet" href="../css/clock-toggle.css">
++<script>try{if(localStorage.getItem("ad30.clockShown")==="0")document.documentElement.className+=" gtc-off";}catch(e){}</script>
++<!-- [chat] private chat with the Admins -->
++<link rel="stylesheet" href="../css/chat.css">
++<style>
++.preview-banner{margin:18px 0 0;padding:12px 14px;border:2px solid #d9b870;border-radius:14px;background:rgba(217,184,112,.12);color:#ece8df;font-size:15px;line-height:1.4;text-align:left}
++.preview-banner b{color:#d9b870}
++</style>
++</head>
++<body>
++
++<!-- ============ SIGN-IN SCREEN (all that visitors see until they sign in) ============ -->
++<main class="gate" id="gate">
++  <h1 class="serif">The Thirtieth Year</h1>
++  <p class="lead">A quiet walk through the dates.<br>Enter your email to come in — no password.</p>
++
++  <form id="gForm" novalidate>
++    <label for="gEmail">Your email</label>
++    <input class="field" id="gEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="you@example.com" required>
++    <button class="btn" id="gSend" type="submit">Email me a sign-in link</button>
++  </form>
++
++  <form id="gCodeForm" novalidate hidden>
++    <p class="msg ok" style="margin-top:0">We emailed <b id="gSentTo"></b>. Tap the link in that email, <b>or</b> type the code from it here:</p>
++    <label for="gCode">Code from the email</label>
++    <input class="field code" id="gCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" placeholder="••••••">
++    <button class="btn" id="gVerify" type="submit">Sign in</button>
++    <button class="linkbtn" id="gResend" type="button">Send another email</button>
++    <button class="linkbtn" id="gBack" type="button">Use a different email</button>
++  </form>
++
++  <p class="msg" id="gMsg" role="status" aria-live="polite"></p>
++
++  <p class="privacy" id="privacy">Privacy: we record your email, which pages and videos you view and when, and the referral link you came from (if any) — used only for this study group. Unsubscribe or ask to be removed anytime.</p>
++
++  <div class="setup-note" id="gSetup" hidden>
++    <b>Not connected yet.</b> <code>js/config.js</code> still has placeholder values, so sign-in is switched off.
++    Follow SETUP.md to connect Supabase and the Google Sheet.
++    <a href="?demo=1">Preview with sample data →</a>
++  </div>
++</main>
++
++<!-- ============ FREE WINDOW ENDED (only when the paywall is switched on) ============ -->
++<main class="gate" id="ended" hidden>
++  <h1 class="serif">Thank you</h1>
++  <p class="lead">Your free 30 days have ended for <b id="endedWho"></b>.</p>
++  <p class="msg ok">Thanks for walking through the dates with us. Subscriptions are coming soon — Sam will be in touch about how to keep going.</p>
++  <button class="btn ghost" id="endedOut" type="button">Sign out</button>
++</main>
++
++<!-- ============ THE PAGE (after sign-in) ============ -->
++<!-- [clock-panel] God's Time Clock (#gtcPanel). Filled by js/prophetic-clock.js, shown only while #page is.
++     Wide screens: sticky left column. Phones: one collapsed bar at the top. -->
++<div class="gtc-shell">
++<div class="gtc-rail">
++<aside class="gtc-side gtc-side-a" id="gtcPanel" aria-label="God's Time Clock" hidden></aside>
++</div>
++<div class="wrap" id="page" hidden>
++  <header>
++    <p class="preview-banner" role="status"><b>PREVIEW FIXTURE</b> · Nov 7 lesson additions · not the live site · nothing is saved, sent, or written to the database. Lessons 11.1–12.2 are labeled stand-ins for videos already on the site. Open Passover · The Cross.</p>
++    <h1 class="serif">The Thirtieth Year</h1>
++    <p class="sub">A quiet walk through the dates</p>
++    <!-- [simple-rework] the full timeline is the Teacher view: this link is shown only to group leaders (js/simple.js) -->
++    <p class="tl-link" id="teacherTop" hidden><span class="sx-viewname">Member view</span> <a href="../index.html">Teacher view (full timeline) →</a></p>
++  </header>
++
++  <!-- 10 Nisan countdown: Teacher view only (removed from member view Oct 4, 2026) -->
++
++  <!-- [featured-30th] "Start here": one featured lesson at the very top (js/lessons-member.js). The lesson is picked by
++       FEATURED_LESSON in js/config.js, or by default the newest lesson whose title has "30th year" or "thirtieth".
++       No matching lesson = this box stays hidden and the page looks exactly as before. -->
++  <section class="lxm-top lxm-feat" id="lxFeat" aria-labelledby="lxFeatH" hidden>
++    <h2 class="lxm-h serif" id="lxFeatH">Start here</h2>
++    <div id="lxFeatBody"></div>
++  </section>
++
++  <!-- [simple-rework] the sections: tap a title to open it (built by js/simple.js from js/simple-data.js) -->
++  <p class="sx-hint">Tap a title to open it.</p>
++  <ol class="sx-list" id="sxList" aria-label="Study sections"></ol>
++  <!-- [layout-v2] "More lessons": only lessons with no timeline spot (General). Lessons with a spot are inside their section above.
++       The box keeps its old id (#lxSimple) because js/simple.js uses it to start the lessons. -->
++  <section class="lxm-top" id="lxSimple" aria-labelledby="lxSimpleH" hidden>
++    <h2 class="lxm-h serif" id="lxSimpleH">More lessons</h2>
++    <p class="lxm-sub">Lessons and files from the Admins that aren’t tied to one date</p>
++    <ul class="lxm-list" id="lxList"></ul>
++    <button class="lxm-all" id="lxAll" type="button" hidden></button>
++    <div class="lxm-mfiles" id="lxFiles" hidden></div>
++  </section>
++
++  <!-- [timeline-v3] the separate Resources shelf is gone: each lesson's PDF is its Study notes button; any other file
++       shows at its timeline spot, or under More lessons. -->
++
++  <p class="status" id="vidStatus" role="status" aria-live="polite"></p>
++
++  <footer>
++    <p class="serif" id="footVerse"></p>
++    <cite id="footRef"></cite>
++    <button class="linkbtn" id="resetBtn" type="button" hidden>Reset watched marks</button>
++
++    <div class="acct">
++      <label class="switch" id="notifyBox" hidden><input type="checkbox" id="notify"> Email me when a new video is added</label>
++      <p id="accessLine" hidden></p>
++      <p>Signed in as <span id="whoami"></span> · <button class="linkbtn" id="signOut" type="button" style="margin:0;padding:0 6px">Sign out</button></p>
++      <p id="leaderLinks" hidden><a href="../index.html">Teacher view (full timeline)</a> · <a id="adminLink" href="../admin.html">Admin view →</a></p>
++      <details class="track">
++        <summary>What this site records</summary>
++        <p>Your email address; the referral link you first arrived with (so partner ministries can be thanked); when you visit; which date cards you open; when you start a video and how far you get (25%, 50%, 75%, finished); when you open “Study notes”. It’s used only by Sam and Ben to see how this study group is going. It isn’t sold or shared.
++        Turn off new-video emails with the switch above or the link in any email. To be removed completely, ask Sam.</p>
++      </details>
++    </div>
++  </footer>
++</div>
++</div><!-- /gtc-shell [clock-panel] -->
++
++<!-- [simple-rework] Study notes: a clean read-along page for one section (or all of them) with Print.
++     Replaces the old bottom sheet and its "Read it to me" button. Filled in by js/simple.js. -->
++<div class="nt" id="notes" role="dialog" aria-modal="true" aria-label="Study notes" hidden>
++  <div class="nt-bar">
++    <button class="nt-btn" id="ntClose" type="button">‹ Back</button>
++    <button class="nt-btn nt-primary" id="ntPrint" type="button">Print</button>
++  </div>
++  <div class="nt-page" id="ntBody"></div>
++  <div class="nt-end">
++    <button class="nt-btn nt-wide" id="ntPrintAll" type="button">Print all notes (every section)</button>
++    <button class="nt-btn nt-wide nt-ghost" id="ntClose2" type="button">Back to the sections</button>
++  </div>
++</div>
++
++<div class="toast" id="toast" role="status" aria-live="polite"></div>
++<div class="tip" id="tip" hidden>
++  <p>Tip: tap Share <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>, then “Add to Home Screen”.</p>
++  <button type="button" id="tipX" aria-label="Dismiss tip">✕</button>
++</div>
++
++<script>
++/* PREVIEW ONLY. Placeholders keep AD30.configured false, so the existing demo flag can run.
++   Production js/config.js is not loaded. This page cannot sign in or read the live database. */
++window.AD30_CONFIG = {
++  SUPABASE_URL: "PASTE_SUPABASE_URL",
++  SUPABASE_ANON_KEY: "PASTE_SUPABASE_ANON_KEY",
++  SHEET_CSV_URL: "PASTE_SHEET_CSV_URL",
++  SITE_URL: "http://127.0.0.1/",
++  CONTACT_NAME: "Sam",
++  ADMIN_EMAILS: [],
++  FEATURED_LESSON: ""
++};
++(function () {
++  var q = location.search || "";
++  if (!/[?&]demo(?:=|&|$)/.test(q)) location.replace(location.pathname + "?demo=1#passover");
++})();
++</script>
++<script src="../js/kjv-verses.js"></script>
++<script src="../js/common.js"></script>
++<!-- [simple-rework] js/app.js (six cards + bottom sheet) is no longer loaded here; js/simple.js replaces it -->
++<!-- [lessons-merge] video lessons (must load before js/simple.js) -->
++<script src="../js/lessons.js?v=20261107a"></script>
++<script src="../js/timeline-dates.js"></script><!-- [timeline-dates] -->
++<script src="../js/resources.js?v=20261107a"></script>
++<script src="nov7-fixture.js"></script>
++<script src="../js/section-overrides.js"></script><!-- [edit-tabs] -->
++<script src="../js/lessons-member.js?v=20261107a"></script>
++<script src="../js/simple-data.js"></script>
++<script src="../js/simple.js"></script>
++<!-- [clock-panel] God's Time Clock: shared core (date math) then the antique panel -->
++<script src="../js/gtc-core.js"></script>
++<script src="../js/prophetic-clock.js"></script>
++<script src="../js/clock-toggle.js"></script><!-- [clock-toggle] -->
++<!-- [chat] private chat with the Admins (needs migrations/2026-10-17_chat.sql) -->
++<script src="../js/chat.js"></script>
++</body>
++</html>
+diff --git a/ad30-members/preview/nov7-additions.sql b/ad30-members/preview/nov7-additions.sql
+new file mode 100644
+index 0000000..5970219
+--- /dev/null
++++ b/ad30-members/preview/nov7-additions.sql
+@@ -0,0 +1,98 @@
++-- Nov 7, 2026 — GodsTimeclock member additions
++-- PREVIEW SQL. Do not apply until the owner approves the placement.
++--
++-- Running this file as written starts a transaction, inserts only rows that
++-- are not already there, then ROLLS BACK. Nothing is kept. To apply later,
++-- replace the final ROLLBACK with COMMIT. There is no UPDATE and no DELETE.
++-- This file does not send email and does not change YouTube.
++--
++-- Placement (proposed):
++--   Red Letter 12.3, 12.4, 12.5 -> marker jn12b (new undated spot after entry / 12.2)
++--   The Heartbeat of the King   -> marker heartbeat (new undated spot after jn12b, before n10)
++-- Members only see those spots after ad30-members/js/lessons.js is published.
++-- The teacher timeline HTML lives in public.teacher_content and is NOT changed here.
++-- On the teacher page, a lesson whose marker is missing from that HTML shows
++-- under Latest lessons until that HTML is updated in a separate approved step.
++--
++-- Drive links are kind 'link', the same value the admin form stores for a
++-- drive.google.com/file/d/.../view URL (the path does not end in .pdf).
++-- Heartbeat resource titles start with the lesson title so the member page
++-- matches all four to that one video, in sort_order. The bold button text is
++-- the ending of the title (Study Notes, Six Week Study Series, Six Week Deeper
++-- Teaching, Companion Handout). The three Red Letter guides use the lesson
++-- title, so each keeps the single "Study notes" button.
++--
++-- If public.lessons / public.resources do not yet have video_source or the
++-- timeline_* columns, drop those columns from the INSERT lists below.
++-- created_by is left to the table default. If a NOT NULL constraint rejects
++-- the insert, set created_by to an existing admin user id and run again
++-- (the NOT EXISTS guards make a second run skip rows already inserted).
++
++begin;
++
++-- Read-only look before any insert. Expected: no rows for the four new videos.
++select youtube_id, title, marker_id, published
++from public.lessons
++where youtube_id in (
++  'W0Jiusiejwg', 'nRCD4of7ewg', 'ifNlS1u3Ldw', 'Wq00ueSP9qY',
++  'pfJTMPaLD-c', 'Kvp2b-VN9QE', 'MWhTrJgDArA', 'OirVfIQTZgc', 'w3TQfxJlrp0',
++  'MpstCh-81kQ', 'Spnq98mXzDg'
++)
++order by youtube_id;
++
++select id, title, marker_id, url
++from public.resources
++where url ilike any (array[
++  '%1TpXPGgHb11L1oGwsPo7NKh7X1XlBgOpi%',
++  '%1dANdRqlZBBo_KJSs3wZvDX7FDbouvukJ%',
++  '%1sWtzLVSlCp5S8itgna5XZ4dYvObbAzcW%',
++  '%1GC5H5mryhyc_m2me76Eds-k_kYe66LGC%',
++  '%14T864o1SHLzfQyH8N2Bm-U9KQ0U8AjBK%',
++  '%1Cuxqq4MNal_7OJ5sQVmfY6u35dm3cLAK%',
++  '%1JJ4JvFK17Fb3qgxoa8VS_fznwFTerA1W%'
++]);
++
++insert into public.lessons (
++  title, youtube_url, youtube_id, video_source, marker_id,
++  summary, verse_refs, sort_order, published, notified,
++  timeline_year, timeline_month, timeline_day, timeline_label
++)
++select
++  v.title, v.youtube_url, v.youtube_id, 'youtube', v.marker_id,
++  null, null, v.sort_order, true, false,
++  null, null, null, null
++from (
++  values
++    ('Red Letter 12.3: The Hour Is Come'::text, 'https://youtu.be/W0Jiusiejwg'::text, 'W0Jiusiejwg'::text, 'jn12b'::text, 10),
++    ('Red Letter 12.4: He Hath Blinded Their Eyes', 'https://youtu.be/nRCD4of7ewg', 'nRCD4of7ewg', 'jn12b', 20),
++    ('Red Letter 12.5: The Last Day', 'https://youtu.be/ifNlS1u3Ldw', 'ifNlS1u3Ldw', 'jn12b', 30),
++    ('The Heartbeat of the King: From Adam to the Throne', 'https://youtu.be/Wq00ueSP9qY', 'Wq00ueSP9qY', 'heartbeat', 10)
++) as v(title, youtube_url, youtube_id, marker_id, sort_order)
++where not exists (
++  select 1 from public.lessons l where l.youtube_id = v.youtube_id
++);
++
++insert into public.resources (
++  title, note, kind, url, marker_id, sort_order, published,
++  timeline_year, timeline_month, timeline_day, timeline_label
++)
++select
++  v.title, null, 'link', v.url, v.marker_id, v.sort_order, true,
++  null, null, null, null
++from (
++  values
++    ('Red Letter 12.3: The Hour Is Come'::text, 'https://drive.google.com/file/d/1TpXPGgHb11L1oGwsPo7NKh7X1XlBgOpi/view'::text, '1TpXPGgHb11L1oGwsPo7NKh7X1XlBgOpi'::text, 'jn12b'::text, 10),
++    ('Red Letter 12.4: He Hath Blinded Their Eyes', 'https://drive.google.com/file/d/1dANdRqlZBBo_KJSs3wZvDX7FDbouvukJ/view', '1dANdRqlZBBo_KJSs3wZvDX7FDbouvukJ', 'jn12b', 20),
++    ('Red Letter 12.5: The Last Day', 'https://drive.google.com/file/d/1sWtzLVSlCp5S8itgna5XZ4dYvObbAzcW/view', '1sWtzLVSlCp5S8itgna5XZ4dYvObbAzcW', 'jn12b', 30),
++    ('The Heartbeat of the King: From Adam to the Throne — Study Notes', 'https://drive.google.com/file/d/1GC5H5mryhyc_m2me76Eds-k_kYe66LGC/view', '1GC5H5mryhyc_m2me76Eds-k_kYe66LGC', 'heartbeat', 1),
++    ('The Heartbeat of the King: From Adam to the Throne — Six Week Study Series', 'https://drive.google.com/file/d/14T864o1SHLzfQyH8N2Bm-U9KQ0U8AjBK/view', '14T864o1SHLzfQyH8N2Bm-U9KQ0U8AjBK', 'heartbeat', 2),
++    ('The Heartbeat of the King: From Adam to the Throne — Six Week Deeper Teaching', 'https://drive.google.com/file/d/1Cuxqq4MNal_7OJ5sQVmfY6u35dm3cLAK/view', '1Cuxqq4MNal_7OJ5sQVmfY6u35dm3cLAK', 'heartbeat', 3),
++    ('The Heartbeat of the King: From Adam to the Throne — Companion Handout', 'https://drive.google.com/file/d/1JJ4JvFK17Fb3qgxoa8VS_fznwFTerA1W/view', '1JJ4JvFK17Fb3qgxoa8VS_fznwFTerA1W', 'heartbeat', 4)
++) as v(title, url, drive_id, marker_id, sort_order)
++where not exists (
++  select 1 from public.resources r
++  where coalesce(r.url, '') ilike '%' || v.drive_id || '%'
++);
++
++-- Safety latch. Replace this line with COMMIT only after review.
++rollback;
+diff --git a/ad30-members/preview/nov7-auth-guard.html b/ad30-members/preview/nov7-auth-guard.html
+new file mode 100644
+index 0000000..0e37f92
+--- /dev/null
++++ b/ad30-members/preview/nov7-auth-guard.html
+@@ -0,0 +1,22 @@
++<!doctype html>
++<html lang="en">
++<head>
++<meta charset="utf-8">
++<meta name="robots" content="noindex,nofollow">
++<title>Preview check: production demo flag stays off</title>
++</head>
++<body>
++<p>This check loads the real config and the real sign-in code. It does not call sign-in and it does not load the Supabase client.</p>
++<pre id="out">waiting</pre>
++<script src="../js/config.js"></script>
++<script src="../js/common.js"></script>
++<script>
++document.getElementById("out").textContent = JSON.stringify({
++  configured: !!(window.AD30 && window.AD30.configured),
++  demo: !!(window.AD30 && window.AD30.demo),
++  hasClient: !!(window.AD30 && window.AD30.sb),
++  search: location.search
++});
++</script>
++</body>
++</html>
+diff --git a/ad30-members/preview/nov7-check.mjs b/ad30-members/preview/nov7-check.mjs
+new file mode 100644
+index 0000000..26e8021
+--- /dev/null
++++ b/ad30-members/preview/nov7-check.mjs
+@@ -0,0 +1,218 @@
++/* Preview checks for the Nov 7 member additions. Serves the repo and drives the
++   labeled fixture page. Does not sign in, and does not write to the database. */
++import { createServer } from "node:http";
++import { readFile } from "node:fs/promises";
++import { extname, join } from "node:path";
++import { fileURLToPath } from "node:url";
++import { mkdir } from "node:fs/promises";
++import { createRequire } from "node:module";
++import { existsSync } from "node:fs";
++const puppeteerRoot = ["/tmp/nov7-test/package.json", new URL("./package.json", import.meta.url).pathname].find((p) => existsSync(p));
++if (!puppeteerRoot) throw new Error("Install puppeteer-core first (this run used npm install puppeteer-core in /tmp/nov7-test). Chrome: /usr/bin/google-chrome");
++const require = createRequire(puppeteerRoot);
++const puppeteer = require("puppeteer-core");
++
++const ROOT = fileURLToPath(new URL("../../", import.meta.url));
++const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".webmanifest": "application/manifest+json", ".txt": "text/plain" };
++const NEW_IDS = ["W0Jiusiejwg", "nRCD4of7ewg", "ifNlS1u3Ldw", "Wq00ueSP9qY"];
++const PRIOR_IDS = ["pfJTMPaLD-c", "Kvp2b-VN9QE", "MWhTrJgDArA", "OirVfIQTZgc", "w3TQfxJlrp0", "MpstCh-81kQ", "Spnq98mXzDg"];
++const DRIVES = [
++  "1TpXPGgHb11L1oGwsPo7NKh7X1XlBgOpi",
++  "1dANdRqlZBBo_KJSs3wZvDX7FDbouvukJ",
++  "1sWtzLVSlCp5S8itgna5XZ4dYvObbAzcW",
++  "1GC5H5mryhyc_m2me76Eds-k_kYe66LGC",
++  "14T864o1SHLzfQyH8N2Bm-U9KQ0U8AjBK",
++  "1Cuxqq4MNal_7OJ5sQVmfY6u35dm3cLAK",
++  "1JJ4JvFK17Fb3qgxoa8VS_fznwFTerA1W"
++];
++const HB_LABELS = ["Study Notes", "Six Week Study Series", "Six Week Deeper Teaching", "Companion Handout"];
++const fails = [];
++function check(name, ok, detail) {
++  const line = (ok ? "PASS " : "FAIL ") + name + (detail ? " — " + detail : "");
++  console.log(line);
++  if (!ok) fails.push(line);
++}
++
++function startServer() {
++  const server = createServer(async (req, res) => {
++    try {
++      const url = new URL(req.url || "/", "http://127.0.0.1");
++      let path = decodeURIComponent(url.pathname).replace(/^\/+/, "");
++      if (!path || path.endsWith("/")) path += "index.html";
++      if (path.split("/").includes("..")) { res.writeHead(403); res.end("no"); return; }
++      const file = join(ROOT, path);
++      const body = await readFile(file);
++      res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream", "cache-control": "no-store" });
++      res.end(body);
++    } catch (e) {
++      res.writeHead(404); res.end(String(e && e.message || e));
++    }
++  });
++  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
++}
++
++const server = await startServer();
++const port = server.address().port;
++const base = "http://127.0.0.1:" + port;
++const browser = await puppeteer.launch({
++  executablePath: "/usr/bin/google-chrome",
++  headless: true,
++  args: ["--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"]
++});
++
++try {
++  const guard = await browser.newPage();
++  await guard.goto(base + "/ad30-members/preview/nov7-auth-guard.html?demo=1", { waitUntil: "domcontentloaded" });
++  const guardJson = JSON.parse(await guard.$eval("#out", (el) => el.textContent));
++  check("production config stays connected", guardJson.configured === true, JSON.stringify(guardJson));
++  check("?demo=1 does not bypass production sign-in", guardJson.demo === false && guardJson.hasClient === false, JSON.stringify(guardJson));
++  await guard.close();
++
++  const simple = await readFile(join(ROOT, "ad30-members/simple.html"), "utf8");
++  check("live member page does not load the fixture", !simple.includes("nov7-fixture") && simple.includes('src="js/config.js"'));
++  check("live member page still has the sign-in gate", simple.includes('id="gate"') && simple.includes("Email me a sign-in link"));
++
++  async function openPreview(width, height) {
++    const page = await browser.newPage();
++    await page.setViewport({ width, height, deviceScaleFactor: width < 500 ? 2 : 1 });
++    const errors = [];
++    page.on("pageerror", (err) => errors.push(String(err)));
++    await page.goto(base + "/ad30-members/preview/nov7-additions.html?demo=1#passover", { waitUntil: "domcontentloaded", timeout: 30000 });
++    await page.waitForSelector("#lxm-Wq00ueSP9qY .lxm-guide-multi .lxm-guide-a", { timeout: 20000 });
++    return { page, errors };
++  }
++
++  const desk = await openPreview(1440, 900);
++  const report = await desk.page.evaluate((hbLabels) => {
++    function buttons(id) {
++      const art = document.getElementById("lxm-" + id);
++      if (!art) return null;
++      const media = art.querySelector(".lx-media");
++      const guide = art.querySelector(".lxm-guide");
++      const links = [].map.call(art.querySelectorAll(".lxm-guide-a"), (a) => ({
++        label: (a.querySelector("b") || {}).textContent || "",
++        small: (a.querySelector("small") || {}).textContent || "",
++        href: a.getAttribute("href") || "",
++        top: a.getBoundingClientRect().top,
++        overflow: a.scrollWidth - a.clientWidth
++      }));
++      const mr = media ? media.getBoundingClientRect() : null;
++      const gr = guide ? guide.getBoundingClientRect() : null;
++      return {
++        title: (art.querySelector(".lxm-t") || {}).textContent || "",
++        links,
++        multi: !!(guide && guide.classList.contains("lxm-guide-multi")),
++        guideBelowVideo: !!(mr && gr && gr.top >= mr.bottom - 1),
++        summary: (art.querySelector(".lxm-sum") || {}).textContent || ""
++      };
++    }
++    const spots = [].map.call(document.querySelectorAll("#s-passover [data-spot]"), (el) => el.getAttribute("data-spot"));
++    const titles = [].map.call(document.querySelectorAll("#s-passover .lxm-t"), (el) => el.textContent);
++    const ids = [].map.call(document.querySelectorAll("#s-passover article.lxm-l"), (el) => (el.id || "").replace(/^lxm-/, ""));
++    const allHrefs = [].map.call(document.querySelectorAll(".lxm-guide-a"), (a) => a.getAttribute("href") || "");
++    const jn12bDate = (document.querySelector("#spot-jn12b .lxm-sd") || {}).textContent || "";
++    const hbDate = (document.querySelector("#spot-heartbeat .lxm-sd") || {}).textContent || "";
++    const hbArt = document.getElementById("lxm-Wq00ueSP9qY");
++    const hbBoxes = hbArt ? [].map.call(hbArt.querySelectorAll(".lxm-guide-a"), (a) => {
++      const r = a.getBoundingClientRect();
++      return { top: r.top, bottom: r.bottom, height: r.height, overflow: a.scrollWidth - a.clientWidth, label: (a.querySelector("b") || {}).textContent };
++    }) : [];
++    return {
++      demo: !!(window.AD30 && window.AD30.demo),
++      configured: !!(window.AD30 && window.AD30.configured),
++      client: !!(window.AD30 && window.AD30.sb),
++      banner: (document.querySelector(".preview-banner") || {}).textContent || "",
++      passoverOpen: document.getElementById("s-passover") ? document.getElementById("s-passover").classList.contains("open") : false,
++      spots, titles, ids, allHrefs, jn12bDate, hbDate,
++      cards: {
++        "12.3": buttons("W0Jiusiejwg"),
++        "12.4": buttons("nRCD4of7ewg"),
++        "12.5": buttons("ifNlS1u3Ldw"),
++        hb: buttons("Wq00ueSP9qY")
++      },
++      hbBoxes,
++      hbLabels,
++      fixture: !!(window.__NOV7_FIXTURE && window.__NOV7_FIXTURE.label)
++    };
++  }, HB_LABELS);
++
++  check("fixture page is demo and not connected", report.demo === true && report.configured === false && report.client === false, JSON.stringify({ demo: report.demo, configured: report.configured, client: report.client }));
++  check("fixture banner is visible", /PREVIEW FIXTURE/.test(report.banner) && /not the live site/.test(report.banner));
++  check("fixture flag is set", report.fixture === true);
++  check("Passover section is open", report.passoverOpen === true);
++  check("no page errors on desktop", desk.errors.length === 0, desk.errors.join(" | "));
++
++  const spotIdx = (id) => report.spots.indexOf(id);
++  check("12.3–12.5 spot follows 12.2 and precedes Heartbeat", spotIdx("entry") >= 0 && spotIdx("entry") < spotIdx("jn12b") && spotIdx("jn12b") < spotIdx("heartbeat") && spotIdx("heartbeat") < spotIdx("n10") && spotIdx("n10") < spotIdx("jn131"), report.spots.filter((id) => ["jn121", "entry", "jn12b", "heartbeat", "n10", "jn131"].includes(id)).join(" > "));
++  check("new spots do not invent a weekday", report.jn12bDate === "After lesson 12.2 · no day fixed" && report.hbDate === "After John 12 and before John 13 · no day fixed", report.jn12bDate + " | " + report.hbDate);
++
++  const order = ["Red Letter 11.1:", "Red Letter 11.2:", "Red Letter 11.3:", "Red Letter 11.4:", "Red Letter 11.5:", "Red Letter 12.1:", "Red Letter 12.2:", "Red Letter 12.3:", "Red Letter 12.4:", "Red Letter 12.5:", "The Heartbeat of the King:"];
++  const pos = order.map((t) => report.titles.findIndex((x) => x.indexOf(t) === 0));
++  check("lesson number order is 11.1 through Heartbeat", pos.every((n, i) => n >= 0 && (i === 0 || n > pos[i - 1])), pos.join(","));
++
++  const seen = {};
++  report.ids.forEach((id) => { seen[id] = (seen[id] || 0) + 1; });
++  NEW_IDS.concat(PRIOR_IDS).forEach((id) => check("video " + id + " shown once", seen[id] === 1, "count " + (seen[id] || 0)));
++  check("no unexpected videos in Passover", report.ids.length === NEW_IDS.length + PRIOR_IDS.length, String(report.ids.length));
++
++  check("exactly seven guide buttons", report.allHrefs.length === 7, String(report.allHrefs.length));
++  DRIVES.forEach((id) => check("guide " + id, report.allHrefs.some((h) => h.indexOf("/file/d/" + id + "/view") >= 0)));
++
++  ["12.3", "12.4", "12.5"].forEach((key) => {
++    const card = report.cards[key];
++    check(key + " has one Study notes button under the video", !!card && card.links.length === 1 && card.links[0].label === "Study notes" && card.guideBelowVideo && card.multi === false, JSON.stringify(card && { n: card.links.length, label: card.links[0] && card.links[0].label, below: card.guideBelowVideo, multi: card.multi }));
++    check(key + " is not a stand-in", !!card && card.summary.indexOf("Fixture stand-in") < 0);
++  });
++  check("12.2 stand-in is labeled and has no new guide", (report.cards && true) && report.titles.some((t) => t.indexOf("Red Letter 12.2:") === 0));
++  const standIn = await desk.page.$eval("#lxm-Spnq98mXzDg", (el) => ({ summary: (el.querySelector(".lxm-sum") || {}).textContent || "", guides: el.querySelectorAll(".lxm-guide-a").length }));
++  check("12.2 stand-in summary is labeled and has no guide button", /Fixture stand-in/.test(standIn.summary) && standIn.guides === 0, JSON.stringify(standIn));
++
++  const hb = report.cards.hb;
++  check("Heartbeat has four buttons under the video", !!hb && hb.links.length === 4 && hb.multi === true && hb.guideBelowVideo, JSON.stringify(hb && { n: hb.links.length, multi: hb.multi, below: hb.guideBelowVideo }));
++  check("Heartbeat button labels and order", !!hb && hb.links.map((l) => l.label).join(" | ") === HB_LABELS.join(" | "), hb && hb.links.map((l) => l.label).join(" | "));
++  check("Heartbeat buttons open in Drive", !!hb && hb.links.every((l) => /opens in Google Drive/.test(l.small) && /drive\.google\.com/.test(l.href)));
++  const stacked = report.hbBoxes.every((b, i) => i === 0 || b.top >= report.hbBoxes[i - 1].bottom - 1);
++  check("Heartbeat buttons stack without overlap", stacked && report.hbBoxes.every((b) => b.height >= 44 && b.overflow <= 1), JSON.stringify(report.hbBoxes));
++
++  const shotDir = "/opt/cursor/artifacts";
++  const localDir = fileURLToPath(new URL("./screenshots/", import.meta.url));
++  await mkdir(shotDir, { recursive: true });
++  await mkdir(localDir, { recursive: true });
++  await desk.page.$eval("#spot-jn12b", (el) => el.scrollIntoView({ block: "start" }));
++  await desk.page.screenshot({ path: shotDir + "/nov7-desktop-john12.png" });
++  await desk.page.screenshot({ path: localDir + "nov7-desktop-john12.png" });
++  await desk.page.$eval("#lxm-Wq00ueSP9qY", (el) => el.scrollIntoView({ block: "center" }));
++  await desk.page.screenshot({ path: shotDir + "/nov7-desktop-heartbeat.png" });
++  await desk.page.screenshot({ path: localDir + "nov7-desktop-heartbeat.png" });
++  await desk.page.close();
++
++  const phone = await openPreview(390, 844);
++  check("no page errors on mobile", phone.errors.length === 0, phone.errors.join(" | "));
++  const mobile = await phone.page.evaluate(() => {
++    const art = document.getElementById("lxm-Wq00ueSP9qY");
++    const links = art ? [].map.call(art.querySelectorAll(".lxm-guide-a b"), (b) => ({
++      text: b.textContent,
++      overflow: b.scrollWidth - b.clientWidth,
++      whiteSpace: getComputedStyle(b).whiteSpace
++    })) : [];
++    const btn = art ? art.querySelector(".lxm-guide-a") : null;
++    return { links, buttonOverflow: btn ? btn.scrollWidth - btn.clientWidth : 99, pageHidden: document.getElementById("page").hidden };
++  });
++  check("mobile Heartbeat labels wrap and stay readable", mobile.links.map((l) => l.text).join(" | ") === HB_LABELS.join(" | ") && mobile.links.every((l) => l.whiteSpace === "normal") && mobile.buttonOverflow <= 1 && mobile.pageHidden === false, JSON.stringify(mobile));
++  await phone.page.$eval("#lxm-Wq00ueSP9qY .lxm-guide", (el) => el.scrollIntoView({ block: "center" }));
++  await phone.page.screenshot({ path: shotDir + "/nov7-mobile-heartbeat.png" });
++  await phone.page.screenshot({ path: localDir + "nov7-mobile-heartbeat.png" });
++  await phone.page.$eval("#spot-jn12b", (el) => el.scrollIntoView({ block: "start" }));
++  await phone.page.screenshot({ path: shotDir + "/nov7-mobile-john12.png" });
++  await phone.page.screenshot({ path: localDir + "nov7-mobile-john12.png" });
++  await phone.page.close();
++} finally {
++  await browser.close();
++  await new Promise((resolve) => server.close(resolve));
++}
++
++if (fails.length) {
++  console.error("\n" + fails.length + " failed");
++  process.exit(1);
++}
++console.log("\nAll checks passed");
+diff --git a/ad30-members/preview/nov7-fixture.js b/ad30-members/preview/nov7-fixture.js
+new file mode 100644
+index 0000000..1fd48cb
+--- /dev/null
++++ b/ad30-members/preview/nov7-fixture.js
+@@ -0,0 +1,55 @@
++/* PREVIEW FIXTURE — Nov 7, 2026 member additions.
++   Loaded only by preview/nov7-additions.html, which does not load production js/config.js.
++   Demo mode (the site's own flag) only runs while the site is not connected, so this file
++   cannot sign in or write to the live database. Nothing here is sent anywhere.
++   Lessons 11.1–12.2 are stand-ins: real public titles and the owner's confirmed spots,
++   so the new lessons can be seen in order. They are not inserts. */
++(function () {
++  "use strict";
++  var STAND = "Fixture stand-in for a lesson already on the live site. Not part of the Nov 7 insert.";
++  function lesson(id, title, yt, marker, sort, at, summary) {
++    return {
++      id: id, title: title, youtube_url: "https://youtu.be/" + yt, youtube_id: yt, video_source: "youtube",
++      marker_id: marker, summary: summary || null, verse_refs: null, sort_order: sort, published: true, notified: false,
++      created_at: at, updated_at: at, created_by: "fixture@preview.local",
++      timeline_year: null, timeline_month: null, timeline_day: null, timeline_label: null, fixture: true
++    };
++  }
++  function guide(id, title, driveId, marker, sort, at) {
++    return {
++      id: id, title: title, note: null, kind: "link", storage_path: null, thumb_path: null,
++      url: "https://drive.google.com/file/d/" + driveId + "/view", mime: null, size_bytes: null,
++      marker_id: marker, sort_order: sort, published: true, created_at: at, created_by: "fixture@preview.local",
++      timeline_year: null, timeline_month: null, timeline_day: null, timeline_label: null, fixture: true, drive_id: driveId
++    };
++  }
++  var LESSONS = [
++    lesson("fix-11-1", "Red Letter 11.1: Not Unto Death", "pfJTMPaLD-c", "jn1155", 10, "2026-10-20T02:00:00.000Z", STAND),
++    lesson("fix-11-2", "Red Letter 11.2: The Resurrection and the Life", "Kvp2b-VN9QE", "jn1155", 20, "2026-10-20T02:05:00.000Z", STAND),
++    lesson("fix-11-3", "Red Letter 11.3: Jesus Wept", "MWhTrJgDArA", "jn1155", 30, "2026-10-20T02:10:00.000Z", STAND),
++    lesson("fix-11-4", "Red Letter 11.4: Take Ye Away the Stone", "OirVfIQTZgc", "jn1155", 40, "2026-10-20T02:15:00.000Z", STAND),
++    lesson("fix-11-5", "Red Letter 11.5: It Is Expedient", "w3TQfxJlrp0", "jn1155", 50, "2026-10-20T02:20:00.000Z", STAND),
++    lesson("fix-12-1", "Red Letter 12.1: Six Days Before the Passover", "MpstCh-81kQ", "jn121", 10, "2026-10-28T02:00:00.000Z", STAND),
++    lesson("fix-12-2", "Red Letter 12.2: Behold, Thy King Cometh", "Spnq98mXzDg", "entry", 10, "2026-10-30T02:00:00.000Z", STAND),
++    lesson("fix-12-3", "Red Letter 12.3: The Hour Is Come", "W0Jiusiejwg", "jn12b", 10, "2026-11-06T12:44:00.000Z", null),
++    lesson("fix-12-4", "Red Letter 12.4: He Hath Blinded Their Eyes", "nRCD4of7ewg", "jn12b", 20, "2026-11-06T12:49:00.000Z", null),
++    lesson("fix-12-5", "Red Letter 12.5: The Last Day", "ifNlS1u3Ldw", "jn12b", 30, "2026-11-06T12:53:00.000Z", null),
++    lesson("fix-hb", "The Heartbeat of the King: From Adam to the Throne", "Wq00ueSP9qY", "heartbeat", 10, "2026-11-06T12:59:00.000Z", null)
++  ];
++  var HB = "The Heartbeat of the King: From Adam to the Throne";
++  var RESOURCES = [
++    guide("fix-g-12-3", "Red Letter 12.3: The Hour Is Come", "1TpXPGgHb11L1oGwsPo7NKh7X1XlBgOpi", "jn12b", 10, "2026-11-06T12:44:30.000Z"),
++    guide("fix-g-12-4", "Red Letter 12.4: He Hath Blinded Their Eyes", "1dANdRqlZBBo_KJSs3wZvDX7FDbouvukJ", "jn12b", 20, "2026-11-06T12:49:30.000Z"),
++    guide("fix-g-12-5", "Red Letter 12.5: The Last Day", "1sWtzLVSlCp5S8itgna5XZ4dYvObbAzcW", "jn12b", 30, "2026-11-06T12:53:30.000Z"),
++    guide("fix-g-hb-1", HB + " — Study Notes", "1GC5H5mryhyc_m2me76Eds-k_kYe66LGC", "heartbeat", 1, "2026-11-06T12:59:10.000Z"),
++    guide("fix-g-hb-2", HB + " — Six Week Study Series", "14T864o1SHLzfQyH8N2Bm-U9KQ0U8AjBK", "heartbeat", 2, "2026-11-06T12:59:20.000Z"),
++    guide("fix-g-hb-3", HB + " — Six Week Deeper Teaching", "1Cuxqq4MNal_7OJ5sQVmfY6u35dm3cLAK", "heartbeat", 3, "2026-11-06T12:59:30.000Z"),
++    guide("fix-g-hb-4", HB + " — Companion Handout", "1JJ4JvFK17Fb3qgxoa8VS_fznwFTerA1W", "heartbeat", 4, "2026-11-06T12:59:40.000Z")
++  ];
++  try { localStorage.setItem("ad30m.demoLessons", JSON.stringify(LESSONS)); } catch (e) {}
++  if (!window.AD30R || typeof window.AD30R.fetch !== "function") return;
++  window.AD30R.fetch = function () {
++    return Promise.resolve({ rows: RESOURCES.map(function (r) { return Object.assign({}, r); }) });
++  };
++  window.__NOV7_FIXTURE = { label: "PREVIEW FIXTURE", lessons: LESSONS, resources: RESOURCES };
++})();
+diff --git a/ad30-members/preview/screenshots/nov7-desktop-heartbeat.png b/ad30-members/preview/screenshots/nov7-desktop-heartbeat.png
+new file mode 100644
+index 0000000..8c50747
+Binary files /dev/null and b/ad30-members/preview/screenshots/nov7-desktop-heartbeat.png differ
+diff --git a/ad30-members/preview/screenshots/nov7-desktop-john12.png b/ad30-members/preview/screenshots/nov7-desktop-john12.png
+new file mode 100644
+index 0000000..5d8e1e2
+Binary files /dev/null and b/ad30-members/preview/screenshots/nov7-desktop-john12.png differ
+diff --git a/ad30-members/preview/screenshots/nov7-mobile-heartbeat.png b/ad30-members/preview/screenshots/nov7-mobile-heartbeat.png
+new file mode 100644
+index 0000000..3fdf3e2
+Binary files /dev/null and b/ad30-members/preview/screenshots/nov7-mobile-heartbeat.png differ
+diff --git a/ad30-members/preview/screenshots/nov7-mobile-john12.png b/ad30-members/preview/screenshots/nov7-mobile-john12.png
+new file mode 100644
+index 0000000..db473ac
+Binary files /dev/null and b/ad30-members/preview/screenshots/nov7-mobile-john12.png differ
+diff --git a/ad30-members/simple.html b/ad30-members/simple.html
+index c6af8fe..6887c43 100644
+--- a/ad30-members/simple.html
++++ b/ad30-members/simple.html
+@@ -20,7 +20,7 @@
+ <link rel="stylesheet" href="css/simple.css">
+ <!-- [lessons-merge] video lessons -->
+ <link rel="stylesheet" href="css/lessons.css">
+-<link rel="stylesheet" href="css/lessons-member.css">
++<link rel="stylesheet" href="css/lessons-member.css?v=20261107a">
+ <link rel="stylesheet" href="css/resources.css">
+ <!-- [clock-panel] God's Time Clock (antique face; Sam's pick). -->
+ <link rel="stylesheet" href="css/gtc-layout.css">
+@@ -163,11 +163,11 @@
+ <script src="js/common.js"></script>
+ <!-- [simple-rework] js/app.js (six cards + bottom sheet) is no longer loaded here; js/simple.js replaces it -->
+ <!-- [lessons-merge] video lessons (must load before js/simple.js) -->
+-<script src="js/lessons.js?v=20261029c"></script>
++<script src="js/lessons.js?v=20261107a"></script>
+ <script src="js/timeline-dates.js"></script><!-- [timeline-dates] -->
+-<script src="js/resources.js"></script>
++<script src="js/resources.js?v=20261107a"></script>
+ <script src="js/section-overrides.js"></script><!-- [edit-tabs] -->
+-<script src="js/lessons-member.js?v=20261029c"></script>
++<script src="js/lessons-member.js?v=20261107a"></script>
+ <script src="js/simple-data.js"></script>
+ <script src="js/simple.js"></script>
+ <!-- [clock-panel] God's Time Clock: shared core (date math) then the antique panel -->
