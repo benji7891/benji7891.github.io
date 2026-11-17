@@ -20,14 +20,14 @@
   var LATEST_SHOWN = 4;         // rows shown in "Latest lessons" before "Show all"
 
   /* ---------- timeline marker -> member-view section ----------
-     1. the section's own timelineIds in js/simple-data.js (birth; jordan; jn737 tab29 half jn714 jn82; cross jn131 jn1828 jn1942;
+     1. the section's own timelineIds in js/simple-data.js (birth; jordan; pass29; jn737 tab29 half jn714 jn82; cross jn131 jn1828 jn1942;
         three jn201 jn2019 high; pent asc)
      2. the other markers, by hand (chronological: each goes to the section it leads up to or belongs with):         */
   var EXTRA = {
     herod: "birth",                                                         // Before the ministry
     pilate: "jordan", john30: "jordan", jn1: "jordan",                      // Two men turn thirty · AD 26
     pass27: "jordan", jn435: "jordan", jn51: "jordan", pass28: "jordan",    // First Passover ... (early ministry, after the Jordan)
-    pass29: "tabernacles", bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles",   // The final twelve months begin · AD 29
+    bday33: "tabernacles", ded29: "tabernacles", fig: "tabernacles",   // The final twelve months begin · AD 29 (pass29 has its own Passover AD 29 tab)
     jn1155: "passover", jn121: "passover", entry: "passover", jn12b: "passover", heartbeat: "passover", n10: "passover", // The final week, up to the cross
     jn2026: "resurrection"                                                  // Thomas, "after eight days": an appearance of the risen Lord (John 20)
   };
